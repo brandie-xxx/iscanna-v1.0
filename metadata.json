@@ -1,0 +1,10 @@
+{
+  "name": "iscannaRecharge",
+  "description": "Apple-grade recharge card scanner, 16-digit OCR PIN extraction, smart carrier auto-wrapper (*133*...#), digit error correction, QR generator, and batch export system.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

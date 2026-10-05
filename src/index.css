@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Geist Pixel', 'Courier New', Courier, monospace;
+    letter-spacing: -0.01em;
+  }
+
+  body {
+    font-family: 'Geist Pixel', 'Courier New', Courier, monospace;
+    background-color: #111215;
+    color: #e4e4e7;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Geist Pixel tabular numbers for PIN displays */
+  .tabular-pin {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    font-family: 'Geist Pixel', ui-monospace, SFMono-Regular, monospace;
+  }
+
+  /* Minimal dark grey scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2b34;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7dd3fc;
+  }
+}
