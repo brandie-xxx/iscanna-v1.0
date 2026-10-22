@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScannedCard, FormatConfig } from '../types';
-import { wrapPinString } from '../data/carriers';
+import { findFormatById, wrapPinString } from '../data/carriers';
 import { triggerHaptic } from '../utils/haptics';
 
 interface DigitCorrectionModalProps {
@@ -21,23 +21,30 @@ export const DigitCorrectionModal: React.FC<DigitCorrectionModalProps> = ({
   const [digits, setDigits] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
+  // Reload from the card each time the editor opens so cancelled edits are discarded
   useEffect(() => {
-    if (card) {
+    if (card && isOpen) {
       const pinChars = card.rawPin.split('');
       while (pinChars.length < 16) pinChars.push('0');
       setDigits(pinChars.slice(0, 16));
 
-      if (card.damagedDigitIndex !== undefined && card.damagedDigitIndex >= 0) {
-        setSelectedIndex(card.damagedDigitIndex);
-      } else {
-        const lowestConfIdx = card.digits.reduce(
-          (minIdx, cur, idx, arr) => (cur.confidence < arr[minIdx].confidence ? idx : minIdx),
-          0
-        );
-        setSelectedIndex(lowestConfIdx >= 0 ? lowestConfIdx : 0);
-      }
+      // Start on the least certain digit (e.g. a scratched one)
+      const lowestConfIdx = card.digits.reduce(
+        (minIdx, cur, idx, arr) => (cur.confidence < arr[minIdx].confidence ? idx : minIdx),
+        0
+      );
+      setSelectedIndex(lowestConfIdx);
     }
-  }, [card]);
+  }, [card, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !card) return null;
 
@@ -72,16 +79,22 @@ export const DigitCorrectionModal: React.FC<DigitCorrectionModalProps> = ({
   const handleSave = () => {
     triggerHaptic('light');
     const newRawPin = digits.join('');
-    const newWrapped = wrapPinString(newRawPin, currentFormat);
+    // Keep the card's own carrier so the label and the wrapped code always agree
+    const format = findFormatById(card.carrierId) ?? currentFormat;
 
     const updatedCard: ScannedCard = {
       ...card,
       rawPin: newRawPin,
       formattedPin: newRawPin.match(/.{1,4}/g)?.join(' ') || newRawPin,
-      wrappedPin: newWrapped,
+      wrappedPin: wrapPinString(newRawPin, format),
+      carrier: format.name,
+      carrierId: format.id,
       status: 'success',
+      errorMessage: undefined,
       confidence: 100,
-      digits: digits.map((char) => ({
+      manualEditsCount: (card.manualEditsCount ?? 0) + 1,
+      digits: digits.map((char, index) => ({
+        index,
         char,
         confidence: 100
       }))
@@ -92,12 +105,17 @@ export const DigitCorrectionModal: React.FC<DigitCorrectionModalProps> = ({
   };
 
   return (
-    <aside className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-xs text-[#e4e4e7] overflow-y-auto">
+    <aside
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="digit-edit-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/75 backdrop-blur-xs text-[#e4e4e7] overflow-y-auto"
+    >
       <article className="bg-[#181920] border border-[#272832] rounded-xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl my-auto">
         
         {/* Simplified Header */}
         <header className="px-4 py-3 border-b border-[#24252e] flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[#f4f4f5]">Edit PIN</h2>
+          <h2 id="digit-edit-title" className="text-sm font-semibold text-[#f4f4f5]">Edit PIN</h2>
           <button
             onClick={() => {
               triggerHaptic('light');
@@ -130,6 +148,8 @@ export const DigitCorrectionModal: React.FC<DigitCorrectionModalProps> = ({
                         triggerHaptic('light');
                         setSelectedIndex(digitIndex);
                       }}
+                      aria-label={`Digit ${digitIndex + 1}`}
+                      aria-pressed={isSelected}
                       className={`flex-1 h-9 rounded text-sm font-bold flex items-center justify-center transition-colors cursor-pointer tabular-pin ${
                         isSelected
                           ? 'bg-[#7dd3fc] text-[#111215]'
@@ -161,6 +181,7 @@ export const DigitCorrectionModal: React.FC<DigitCorrectionModalProps> = ({
               <button
                 type="button"
                 onClick={handleClear}
+                aria-label="Clear digit"
                 className="py-2.5 bg-[#22232c] hover:bg-[#2b2c37] text-[#9ca3af] font-semibold text-xs rounded-md flex items-center justify-center min-h-[44px] cursor-pointer"
               >
                 C
@@ -177,6 +198,7 @@ export const DigitCorrectionModal: React.FC<DigitCorrectionModalProps> = ({
               <button
                 type="button"
                 onClick={handleBackspace}
+                aria-label="Backspace"
                 className="py-2.5 bg-[#22232c] hover:bg-[#2b2c37] text-[#7dd3fc] font-bold text-base rounded-md flex items-center justify-center min-h-[44px] cursor-pointer"
               >
                 ⌫

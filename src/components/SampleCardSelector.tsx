@@ -21,10 +21,6 @@ export const SampleCardSelector: React.FC<SampleCardSelectorProps> = ({
           return (
             <label
               key={sc.id}
-              onClick={() => {
-                triggerHaptic('light');
-                onSelectScenario(sc);
-              }}
               className={`px-3 py-2 rounded-lg border transition-colors cursor-pointer min-h-[38px] text-xs font-medium shrink-0 flex items-center gap-2 whitespace-nowrap select-none ${
                 isSelected
                   ? 'bg-[#22232c] text-[#f4f4f5] border-[#7dd3fc]'
@@ -36,7 +32,8 @@ export const SampleCardSelector: React.FC<SampleCardSelectorProps> = ({
                 name="sampleScenarioPreset"
                 value={sc.id}
                 checked={isSelected}
-                onChange={() => {
+                readOnly
+                onClick={() => {
                   triggerHaptic('light');
                   onSelectScenario(sc);
                 }}

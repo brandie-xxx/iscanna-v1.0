@@ -25,7 +25,7 @@ export const NavigationControlBar: React.FC<NavigationControlBarProps> = ({
       className="w-full bg-[#181920] border border-[#272832] rounded-xl p-2 sm:p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2"
     >
       {/* Tab Mode Control (Scan vs Batch) as Radio Buttons */}
-      <fieldset className="flex items-center bg-[#111215] p-1 rounded-lg border border-[#272832] flex-1 sm:flex-initial gap-1 border-0 m-0">
+      <fieldset className="flex items-center bg-[#111215] p-1 rounded-lg border border-[#272832] flex-1 sm:flex-initial gap-1 m-0">
         <legend className="sr-only">App view mode</legend>
         
         <label
@@ -103,7 +103,7 @@ export const NavigationControlBar: React.FC<NavigationControlBarProps> = ({
       </fieldset>
 
       {/* Carrier Switcher Control (NetOne vs Econet) as Radio Buttons */}
-      <fieldset className="flex items-center bg-[#111215] p-1 rounded-lg border border-[#272832] flex-1 sm:flex-initial gap-1 border-0 m-0">
+      <fieldset className="flex items-center bg-[#111215] p-1 rounded-lg border border-[#272832] flex-1 sm:flex-initial gap-1 m-0">
         <legend className="sr-only">Carrier format</legend>
         {DEFAULT_FORMATS.map((fmt) => {
           const isSelected = currentFormat.id === fmt.id;

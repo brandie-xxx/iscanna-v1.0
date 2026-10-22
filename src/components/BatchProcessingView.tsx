@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { Copy, Download, Trash2, Check, Plus, Edit3, PhoneCall } from 'lucide-react';
-import { ScannedCard, FormatConfig } from '../types';
+import { ScannedCard } from '../types';
 import { triggerHaptic } from '../utils/haptics';
+import { copyText } from '../utils/dial';
+
+// Quote a CSV field and neutralise spreadsheet formula prefixes
+const csvField = (value: string) => {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
+};
 
 interface BatchProcessingViewProps {
   batchCards: ScannedCard[];
-  currentFormat: FormatConfig;
   onRemoveFromBatch: (id: string) => void;
   onClearBatch: () => void;
   onSwitchToScanner: () => void;
@@ -15,7 +21,6 @@ interface BatchProcessingViewProps {
 
 export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
   batchCards,
-  currentFormat,
   onRemoveFromBatch,
   onClearBatch,
   onSwitchToScanner,
@@ -23,15 +28,15 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
   onDialCard
 }) => {
   const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'txt'>('csv');
-  const [copiedAll, setCopiedAll] = useState<boolean>(false);
+  const [copyAllState, setCopyAllState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const copiedAll = copyAllState === 'copied';
 
-  const handleCopyAll = () => {
+  const handleCopyAll = async () => {
     if (batchCards.length === 0) return;
-    const allWrapped = batchCards.map(c => c.wrappedPin).join('\n');
-    navigator.clipboard.writeText(allWrapped);
-    triggerHaptic('light');
-    setCopiedAll(true);
-    setTimeout(() => setCopiedAll(false), 2000);
+    const ok = await copyText(batchCards.map(c => c.wrappedPin).join('\n'));
+    triggerHaptic(ok ? 'light' : 'error');
+    setCopyAllState(ok ? 'copied' : 'failed');
+    setTimeout(() => setCopyAllState('idle'), 2000);
   };
 
   const handleExportDownload = () => {
@@ -44,7 +49,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
 
     if (exportFormat === 'csv') {
       content = 'Index,RAW_PIN,WRAPPED_PIN,CARRIER\n' +
-        batchCards.map((c, i) => `${i + 1},"${c.rawPin}","${c.wrappedPin}","${c.carrier}"`).join('\n');
+        batchCards.map((c, i) => [String(i + 1), c.rawPin, c.wrappedPin, c.carrier].map(csvField).join(',')).join('\n');
       fileName += '.csv';
       mimeType = 'text/csv';
     } else if (exportFormat === 'json') {
@@ -69,7 +74,8 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Some browsers (Safari) start the download asynchronously
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
@@ -134,7 +140,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
                       {c.wrappedPin}
                     </span>
                     <span className="text-[10px] sm:text-[11px] text-[#71717a] truncate">
-                      {c.carrier} • {c.rawPin.match(/.{1,4}/g)?.join(' ')}
+                      {c.carrier} • {c.formattedPin}{c.status !== 'success' && ' • needs review'}
                     </span>
                   </span>
                 </span>
@@ -143,8 +149,10 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
                   {onDialCard && (
                     <button
                       onClick={() => onDialCard(c)}
-                      className="p-2 rounded-md hover:bg-[#22232c] text-[#7dd3fc] cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
-                      title="Dial Voucher"
+                      disabled={c.status !== 'success'}
+                      className="p-2 rounded-md hover:bg-[#22232c] text-[#7dd3fc] cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={c.status === 'success' ? 'Dial Voucher' : 'Review PIN before dialing'}
+                      aria-label="Dial Voucher"
                     >
                       <PhoneCall className="w-4 h-4" />
                     </button>
@@ -157,6 +165,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
                     }}
                     className="p-2 rounded-md hover:bg-[#22232c] text-[#9ca3af] hover:text-[#f4f4f5] cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
                     title="Edit Digits"
+                    aria-label="Edit Digits"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
@@ -168,6 +177,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
                     }}
                     className="p-2 rounded-md hover:bg-[#22232c] text-[#71717a] hover:text-[#7dd3fc] cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
                     title="Remove"
+                    aria-label="Remove"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -234,7 +244,7 @@ export const BatchProcessingView: React.FC<BatchProcessingViewProps> = ({
               }`}
             >
               {copiedAll ? <Check className="w-4 h-4 text-[#7dd3fc]" /> : <Copy className="w-4 h-4 text-[#9ca3af]" />}
-              <span>{copiedAll ? 'Copied All' : 'Copy All'}</span>
+              <span>{copiedAll ? 'Copied All' : copyAllState === 'failed' ? 'Copy Failed' : 'Copy All'}</span>
             </button>
 
             <button

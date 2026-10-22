@@ -1,15 +1,23 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { DEFAULT_FORMATS, wrapPinString } from "./src/data/carriers";
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 
-app.use(express.json({ limit: '25mb' }));
+// Behind a load balancer, set TRUST_PROXY_HOPS so rate limiting sees real client IPs
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS);
+if (trustProxyHops > 0) {
+  app.set("trust proxy", trustProxyHops);
+}
+
+// Client downscales photos to ~1600px JPEG, so a few MB is ample headroom
+app.use(express.json({ limit: '6mb' }));
 
 // Shared Gemini AI client initialization (Server-side only)
 function getGeminiClient() {
@@ -17,219 +25,151 @@ function getGeminiClient() {
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
     return null;
   }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build'
-      }
-    }
-  });
+  return new GoogleGenAI({ apiKey });
 }
 
-// Carrier mapping rules - NetOne & Econet only
-const CARRIER_PREFIXES: Record<string, { name: string; prefix: string; suffix: string }> = {
-  '4022': { name: 'NetOne', prefix: '*133*', suffix: '#' },
-  '3630': { name: 'Econet', prefix: '*150*', suffix: '#' },
-};
-
-function wrapPin(pin: string, customPrefix?: string, customSuffix?: string): { wrapped: string; carrier: string } {
-  const cleanPin = pin.replace(/\D/g, '');
-  
-  if (customPrefix !== undefined && customSuffix !== undefined && customPrefix && customSuffix) {
-    return {
-      wrapped: `${customPrefix}${cleanPin}${customSuffix}`,
-      carrier: customPrefix.includes('150') ? 'Econet' : 'NetOne'
-    };
-  }
-
-  for (const [prefixKey, config] of Object.entries(CARRIER_PREFIXES)) {
-    if (cleanPin.startsWith(prefixKey)) {
-      return {
-        wrapped: `${config.prefix}${cleanPin}${config.suffix}`,
-        carrier: config.name
-      };
+// Simple fixed-window per-IP limiter so the Gemini quota can't be drained by one client
+function rateLimit(maxRequests: number, windowMs: number): express.RequestHandler {
+  const hits = new Map<string, { count: number; resetAt: number }>();
+  return (req, res, next) => {
+    const now = Date.now();
+    if (hits.size > 10_000) {
+      for (const [key, entry] of hits) {
+        if (entry.resetAt <= now) hits.delete(key);
+      }
     }
-  }
-
-  // Default NetOne *133*
-  return {
-    wrapped: `*133*${cleanPin}#`,
-    carrier: 'NetOne'
+    const key = req.ip || "unknown";
+    const entry = hits.get(key);
+    if (!entry || entry.resetAt <= now) {
+      hits.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    if (entry.count >= maxRequests) {
+      res.setHeader("Retry-After", Math.ceil((entry.resetAt - now) / 1000));
+      return res.status(429).json({ error: "Too many scans. Please wait a moment and try again." });
+    }
+    entry.count++;
+    next();
   };
+}
+
+const USSD_PART = /^[*#0-9]{1,10}$/;
+const IMAGE_DATA_URL = /^data:(image\/(?:jpeg|png|webp|heic|heif));base64,([A-Za-z0-9+/=]+)$/;
+
+function clampPercent(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.round(Math.min(100, Math.max(0, value)))
+    : 0;
 }
 
 // ---------------- API ENDPOINTS ----------------
 
 // Health check
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", service: "iscanna1.0 API", timestamp: Date.now() });
+  res.json({ status: "ok", service: "iscanna1.0 API", ocrConfigured: getGeminiClient() !== null, timestamp: Date.now() });
 });
 
 // Format configuration list (NetOne & Econet only)
 app.get("/api/formats", (_req, res) => {
   res.json({
-    formats: [
-      { id: 'netone', name: 'NetOne', prefix: '*133*', suffix: '#' },
-      { id: 'econet', name: 'Econet', prefix: '*150*', suffix: '#' }
-    ]
+    formats: DEFAULT_FORMATS.map(({ id, name, prefix, suffix }) => ({ id, name, prefix, suffix }))
   });
 });
 
 // Wrap single PIN endpoint
 app.post("/api/format", (req, res) => {
-  const { pin, prefix, suffix } = req.body;
-  if (!pin) {
-    return res.status(400).json({ error: "Missing PIN string" });
+  const { pin, prefix, suffix } = req.body ?? {};
+  if (typeof pin !== "string" || !/\d/.test(pin)) {
+    return res.status(400).json({ error: "pin must be a string containing digits" });
   }
-  const result = wrapPin(pin, prefix, suffix);
-  res.json({ pin, wrapped: result.wrapped, carrier: result.carrier });
+  if ((prefix !== undefined && (typeof prefix !== "string" || !USSD_PART.test(prefix))) ||
+      (suffix !== undefined && (typeof suffix !== "string" || !USSD_PART.test(suffix)))) {
+    return res.status(400).json({ error: "prefix and suffix may only contain digits, * and #" });
+  }
+
+  const format = DEFAULT_FORMATS.find(f => f.prefix === prefix && f.suffix === (suffix ?? f.suffix))
+    ?? (prefix ? { id: 'custom', name: 'Custom', prefix, suffix: suffix ?? '#' } : DEFAULT_FORMATS[0]);
+  res.json({ pin, wrapped: wrapPinString(pin, format), carrier: format.name });
 });
 
-// Single Image Scan Endpoint with Gemini Vision OCR & heuristic fallback
-app.post("/api/scan", async (req, res) => {
+// Single image scan endpoint (Gemini Vision OCR). Never fabricates a PIN on failure.
+app.post("/api/scan", rateLimit(20, 60_000), async (req, res) => {
+  const { image } = req.body ?? {};
+  const match = typeof image === "string" ? image.match(IMAGE_DATA_URL) : null;
+  if (!match) {
+    return res.status(400).json({ error: "image must be a base64 JPEG, PNG, WebP or HEIC data URL" });
+  }
+  const [, mimeType, base64Data] = match;
+
+  const ai = getGeminiClient();
+  if (!ai) {
+    return res.status(503).json({ error: "OCR is not configured on the server (missing GEMINI_API_KEY)." });
+  }
+
   try {
-    const { image, formatPrefix, formatSuffix, rawTextOverride } = req.body;
-
-    if (rawTextOverride) {
-      const cleanDigits = rawTextOverride.replace(/\D/g, '').slice(0, 16);
-      const { wrapped, carrier } = wrapPin(cleanDigits, formatPrefix, formatSuffix);
-      return res.json({
-        success: true,
-        pin: cleanDigits,
-        wrapped,
-        carrier,
-        confidence: 99,
-        quality: { resolutionOk: true, lightingOk: true, blurDetected: false }
-      });
-    }
-
-    if (!image) {
-      return res.status(400).json({ error: "No image provided" });
-    }
-
-    const ai = getGeminiClient();
-
-    if (ai) {
-      try {
-        // Strip data header if present
-        const base64Data = image.includes(',') ? image.split(',')[1] : image;
-        const mimeType = image.includes('image/png') ? 'image/png' : 'image/jpeg';
-
-        const prompt = `Analyze this recharge voucher card photo.
-Extract the 16-digit voucher PIN number accurately.
-Look for any continuous 16-digit number or 4 groups of 4 digits (e.g., 4022 6224 0582 1561).
+    const prompt = `Analyze this recharge voucher card photo.
+Extract the 16-digit voucher PIN number exactly as printed.
+Look for a continuous 16-digit number or 4 groups of 4 digits (e.g., 4022 6224 0582 1561).
+Never guess digits you cannot read: return only the digits you can actually see, in order.
 Return a JSON object containing:
-- pin: exactly 16 digits (string)
-- confidence: integer percentage 0-100 of overall OCR accuracy
-- carrierName: estimated mobile operator name if visible or detected (either NetOne or Econet)
+- pin: the digits read (string, digits only)
+- confidence: integer percentage 0-100 of how certain you are every digit is correct
 - blurDetected: boolean
 - lightingOk: boolean
 - resolutionOk: boolean`;
 
-        const response = await ai.models.generateContent({
-          model: "gemini-3.6-flash",
-          contents: {
-            parts: [
-              { inlineData: { mimeType, data: base64Data } },
-              { text: prompt }
-            ]
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            pin: { type: Type.STRING, description: "Digits of the voucher PIN" },
+            confidence: { type: Type.INTEGER, description: "Confidence score 0 to 100" },
+            blurDetected: { type: Type.BOOLEAN },
+            lightingOk: { type: Type.BOOLEAN },
+            resolutionOk: { type: Type.BOOLEAN }
           },
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                pin: { type: Type.STRING, description: "16-digit PIN number" },
-                confidence: { type: Type.INTEGER, description: "Confidence score 0 to 100" },
-                carrierName: { type: Type.STRING, description: "Detected mobile carrier name" },
-                blurDetected: { type: Type.BOOLEAN },
-                lightingOk: { type: Type.BOOLEAN },
-                resolutionOk: { type: Type.BOOLEAN }
-              },
-              required: ["pin", "confidence"]
-            }
-          }
-        });
-
-        const textOutput = response.text?.trim();
-        if (textOutput) {
-          const parsed = JSON.parse(textOutput);
-          const pinDigits = (parsed.pin || "").replace(/\D/g, '').slice(0, 16);
-          
-          if (pinDigits.length > 0) {
-            const { wrapped, carrier } = wrapPin(pinDigits, formatPrefix, formatSuffix);
-            return res.json({
-              success: true,
-              pin: pinDigits.padEnd(16, '0'),
-              wrapped,
-              carrier: parsed.carrierName || carrier,
-              confidence: parsed.confidence || 95,
-              quality: {
-                resolutionOk: parsed.resolutionOk ?? true,
-                lightingOk: parsed.lightingOk ?? true,
-                blurDetected: parsed.blurDetected ?? false
-              }
-            });
-          }
+          required: ["pin", "confidence"]
         }
-      } catch (geminiError) {
-        console.warn("Gemini OCR Vision fallback triggered:", geminiError);
       }
-    }
-
-    // Heuristic Fallback if Gemini not used or failed
-    const fallbackPin = "4022622405821561";
-    const { wrapped, carrier } = wrapPin(fallbackPin, formatPrefix, formatSuffix);
-    return res.json({
-      success: true,
-      pin: fallbackPin,
-      wrapped,
-      carrier,
-      confidence: 92,
-      quality: { resolutionOk: true, lightingOk: true, blurDetected: false }
     });
 
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Scan failed";
-    res.status(500).json({ error: message });
-  }
-});
+    const parsed = JSON.parse(response.text?.trim() || "{}");
+    const pinDigits = String(parsed.pin ?? "").replace(/\D/g, '').slice(0, 16);
 
-// Batch processing endpoint
-app.post("/api/batch", async (req, res) => {
-  const { images, prefix, suffix } = req.body;
-  if (!Array.isArray(images) || images.length === 0) {
-    return res.status(400).json({ error: "No images provided for batch" });
-  }
+    if (pinDigits.length === 0) {
+      return res.status(422).json({ error: "No PIN digits could be read from this photo." });
+    }
 
-  const results = images.map((imgData: string, idx: number) => {
-    // Generate deterministic demo batch PINs (NetOne and Econet)
-    const mockPins = [
-      "4022622405821561",
-      "3630146682113274",
-      "4022991054117823",
-      "3630712900451829"
-    ];
-    const pin = mockPins[idx % mockPins.length];
-    const { wrapped, carrier } = wrapPin(pin, prefix, suffix);
-    return {
-      index: idx + 1,
+    return res.json({
       success: true,
-      pin,
-      wrapped,
-      carrier,
-      confidence: 95 + (idx % 4)
-    };
-  });
-
-  res.json({ results });
+      pin: pinDigits,
+      confidence: clampPercent(parsed.confidence),
+      quality: {
+        resolutionOk: parsed.resolutionOk !== false,
+        lightingOk: parsed.lightingOk !== false,
+        blurDetected: parsed.blurDetected === true
+      }
+    });
+  } catch (err) {
+    console.error("Gemini OCR failed:", err);
+    return res.status(502).json({ error: "The OCR service failed to read this photo. Please try again." });
+  }
 });
 
 // ---------------- VITE & SERVER LAUNCH ----------------
 
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -244,7 +184,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`ReChargeWrap server running on http://0.0.0.0:${PORT}`);
+    console.log(`iscanna1.0 server running on http://0.0.0.0:${PORT}`);
   });
 }
 

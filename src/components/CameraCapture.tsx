@@ -1,12 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Camera, Upload, RefreshCw, AlertCircle, Plus } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
+import { captureVideoFrame, downscaleImageFile } from '../utils/image';
 
 interface CameraCaptureProps {
   onCaptureImage: (imageDataUrl: string) => void;
   isProcessing: boolean;
   selectedSampleImage?: string;
-  onClearSampleImage?: () => void;
+  selectedCardId?: string;
   targetScanCount: number;
   setTargetScanCount: (count: number) => void;
   currentBatchCount?: number;
@@ -16,14 +17,12 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
   onCaptureImage,
   isProcessing,
   selectedSampleImage,
-  onClearSampleImage,
+  selectedCardId,
   targetScanCount,
   setTargetScanCount,
   currentBatchCount = 0
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  
   const [cameraActive, setCameraActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
@@ -39,13 +38,12 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       setPreviewImage(selectedSampleImage);
       stopCamera();
     }
-  }, [selectedSampleImage]);
+  }, [selectedSampleImage, selectedCardId]);
 
   const startCamera = async () => {
     triggerHaptic('medium');
     try {
       setCameraError(null);
-      if (onClearSampleImage) onClearSampleImage();
       setPreviewImage(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -58,8 +56,10 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
         setCameraActive(true);
+      } else {
+        stream.getTracks().forEach(track => track.stop());
       }
     } catch (err: unknown) {
       console.warn("Camera access warning:", err);
@@ -84,43 +84,37 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
   }, []);
 
   const takeSnapshot = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current) return;
     triggerHaptic('heavy');
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    try {
+      const dataUrl = captureVideoFrame(videoRef.current);
       setPreviewImage(dataUrl);
       stopCamera();
       onCaptureImage(dataUrl);
+    } catch {
+      setCameraError("Couldn't capture the frame. Try again or upload a photo.");
     }
   };
 
   const handleFileChange = (file: File) => {
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/')) {
+      setCameraError('That file is not an image.');
+      return;
+    }
     triggerHaptic('light');
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        if (onClearSampleImage) onClearSampleImage();
-        setPreviewImage(result);
+    setCameraError(null);
+    // Re-encode to a downscaled JPEG: smaller upload, and a format the OCR service accepts
+    downscaleImageFile(file)
+      .then((dataUrl) => {
+        setPreviewImage(dataUrl);
         stopCamera();
-        onCaptureImage(result);
-      }
-    };
-    reader.readAsDataURL(file);
+        onCaptureImage(dataUrl);
+      })
+      .catch(() => setCameraError("This browser can't open that image. Try a JPEG or PNG."));
   };
 
   return (
     <section className="w-full bg-[#181920] border border-[#272832] rounded-xl p-3.5 sm:p-5 flex flex-col justify-between">
-      <canvas ref={canvasRef} className="hidden" />
 
       {/* Header & Target Count */}
       <header className="flex items-center justify-between pb-3 mb-3 border-b border-[#24252e] flex-wrap gap-2 text-xs">
@@ -176,7 +170,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       {targetScanCount > 1 && (
         <aside className="mb-3 bg-[#111215] border border-[#272832] text-[#9ca3af] rounded-lg px-3 py-2 flex items-center justify-between text-xs">
           <span>Target: {currentBatchCount} of {targetScanCount} cards</span>
-          <span className="text-[#7dd3fc] font-semibold">{Math.round((currentBatchCount / targetScanCount) * 100)}%</span>
+          <span className="text-[#7dd3fc] font-semibold">{Math.min(100, Math.round((currentBatchCount / targetScanCount) * 100))}%</span>
         </aside>
       )}
 
@@ -240,6 +234,9 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
             <p className="text-xs text-[#71717a] mb-3 max-w-xs leading-relaxed">
               Place NetOne or Econet card in frame or upload photo
             </p>
+            <p className="text-[10px] text-[#52525b] mb-3 max-w-xs leading-relaxed">
+              Photos are sent to Google Gemini to read the PIN.
+            </p>
             <label className="cursor-pointer px-4 py-2.5 rounded-lg bg-[#22232c] hover:bg-[#2b2c37] text-[#7dd3fc] border border-[#272832] font-medium text-xs transition-colors min-h-[44px] flex items-center gap-2">
               <Upload className="w-4 h-4 text-[#7dd3fc]" />
               <span>Select Card Photo</span>
@@ -276,7 +273,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
             <button
               onClick={takeSnapshot}
               disabled={isProcessing}
-              className="flex-1 py-2.5 rounded-lg bg-[#7dd3fc] hover:bg-[#38bdf8] text-[#111215] font-bold text-xs min-h-[44px] cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-lg bg-[#7dd3fc] hover:bg-[#38bdf8] text-[#111215] font-bold text-xs min-h-[44px] cursor-pointer transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Capture Card
             </button>
@@ -293,13 +290,30 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
         )}
 
         {!cameraActive && previewImage && (
+          <label className="px-4 py-2.5 rounded-lg bg-[#22232c] hover:bg-[#2b2c37] border border-[#272832] text-[#f4f4f5] font-medium text-xs flex items-center justify-center gap-2 min-h-[44px] cursor-pointer transition-colors">
+            <Upload className="w-4 h-4 text-[#7dd3fc]" />
+            <span className="hidden sm:inline">Upload</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              aria-label="Upload card photo"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleFileChange(e.target.files[0]);
+                e.target.value = '';
+              }}
+            />
+          </label>
+        )}
+
+        {!cameraActive && previewImage && (
           <button
             onClick={() => {
               triggerHaptic('medium');
               onCaptureImage(previewImage);
             }}
             disabled={isProcessing}
-            className="px-4 py-2.5 rounded-lg bg-[#7dd3fc] hover:bg-[#38bdf8] text-[#111215] font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] cursor-pointer transition-colors"
+            className="px-4 py-2.5 rounded-lg bg-[#7dd3fc] hover:bg-[#38bdf8] text-[#111215] font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isProcessing ? 'animate-spin' : ''}`} />
             <span>Re-Scan</span>

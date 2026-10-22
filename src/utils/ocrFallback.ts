@@ -1,91 +1,75 @@
-import { ScannedCard, DigitConfidence } from '../types';
-import { DEFAULT_FORMATS, detectCarrierByPin, wrapPinString } from '../data/carriers';
+import { ScannedCard, DigitConfidence, FormatConfig } from '../types';
+import { detectCarrierByPin, wrapPinString } from '../data/carriers';
+
+export const PIN_LENGTH = 16;
+
+interface OcrDetails {
+  confidence?: number;
+  qualityCheck?: ScannedCard['qualityCheck'];
+}
 
 /**
- * Robust PIN extraction from text or OCR output
+ * Builds a ScannedCard from OCR text. Never invents digits: anything shorter than
+ * 16 digits is flagged for review, and missing positions are marked 0% confidence.
  */
-export function processPinText(text: string, imageUrl?: string, customFormatId?: string): ScannedCard {
-  // Clean non-digit characters except space and hyphens
-  const rawDigitsOnly = text.replace(/[^\d]/g, '');
+export function processPinText(
+  text: string,
+  fallbackFormat: FormatConfig,
+  imageUrl?: string,
+  details: OcrDetails = {}
+): ScannedCard {
+  const rawDigitsOnly = text.replace(/\D/g, '');
 
-  let pin16 = '';
-  let confidence = 85;
-  let status: 'success' | 'warning' | 'error' = 'success';
-  let errorMessage: string | undefined = undefined;
-
-  // Search for any 16-digit continuous sequence
+  // Prefer a standalone 16-digit run, then 4 groups of 4, then the first 16 digits
   const match16 = text.match(/\b\d{16}\b/);
-  const matchGrouped = text.match(/(\d{4}[\s-]?){4}/);
-
+  const matchGrouped = text.match(/\d{4}(?:[\s-]?\d{4}){3}/);
+  let foundDigits: string;
   if (match16) {
-    pin16 = match16[0];
-    confidence = 98;
+    foundDigits = match16[0];
   } else if (matchGrouped) {
-    pin16 = matchGrouped[0].replace(/[\s-]/g, '');
-    confidence = 95;
-  } else if (rawDigitsOnly.length >= 16) {
-    // Take first 16 digits sequence
-    pin16 = rawDigitsOnly.slice(0, 16);
-    confidence = 88;
-  } else if (rawDigitsOnly.length > 0) {
-    // Incomplete PIN sequence
-    pin16 = rawDigitsOnly.padEnd(16, '0');
-    confidence = 65;
-    status = 'warning';
-    errorMessage = 'Incomplete PIN detected (less than 16 digits). Please inspect and edit manually.';
+    foundDigits = matchGrouped[0].replace(/[\s-]/g, '');
   } else {
-    // No digits found
-    pin16 = '0000000000000000';
-    confidence = 30;
-    status = 'error';
-    errorMessage = 'No 16-digit PIN detected in image. Try re-aligning card under good lighting.';
+    foundDigits = rawDigitsOnly.slice(0, PIN_LENGTH);
   }
 
-  // Detect Carrier
-  const carrierFmt = detectCarrierByPin(pin16, DEFAULT_FORMATS);
-  const activeFmt = customFormatId 
-    ? (DEFAULT_FORMATS.find(f => f.id === customFormatId) || carrierFmt)
-    : carrierFmt;
+  const confidence = Math.round(Math.min(100, Math.max(0, details.confidence ?? 0)));
+  let status: ScannedCard['status'] = 'success';
+  let errorMessage: string | undefined;
 
-  // Format PIN into 4x4 blocks
-  const formattedPin = pin16.replace(/(\d{4})(?=\d)/g, '$1 ');
-  const wrappedPin = wrapPinString(pin16, activeFmt);
+  if (foundDigits.length === 0) {
+    status = 'error';
+    errorMessage = 'No PIN detected. Re-align the card under good lighting, or enter it manually.';
+  } else if (foundDigits.length < PIN_LENGTH) {
+    status = 'warning';
+    errorMessage = `Only ${foundDigits.length} of ${PIN_LENGTH} digits were read. Fill in the missing digits before dialing.`;
+  } else if (confidence < 80) {
+    status = 'warning';
+    errorMessage = 'Low read confidence. Check every digit before dialing.';
+  }
 
-  // Generate digit-by-digit confidence array
+  // Missing positions are placeholders for the editor, never presented as read digits
+  const pin16 = foundDigits.padEnd(PIN_LENGTH, '0');
+  const activeFmt = detectCarrierByPin(foundDigits) ?? fallbackFormat;
+
   const digits: DigitConfidence[] = pin16.split('').map((char, index) => {
-    // Add artificial variation for realistic testing display if needed
-    let digitConf = confidence;
-    if (confidence < 90 && (index === 10 || index === 11)) {
-      digitConf = Math.min(confidence - 15, 60);
-    } else {
-      digitConf = Math.min(100, Math.max(70, confidence + Math.floor((index % 3) * 2)));
-    }
-    return {
-      index,
-      char,
-      confidence: Math.round(digitConf),
-      isLowConfidence: digitConf < 80
-    };
+    const digitConf = index < foundDigits.length ? confidence : 0;
+    return { index, char, confidence: digitConf, isLowConfidence: digitConf < 80 };
   });
 
   return {
-    id: 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    id: 'card-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
     rawPin: pin16,
-    formattedPin,
-    wrappedPin,
-    carrier: activeFmt.name.replace(' Recharge', '').replace(' Direct', '').replace(' Airtime', '').replace(' Mobile', ''),
+    formattedPin: pin16.replace(/(\d{4})(?=\d)/g, '$1 '),
+    wrappedPin: wrapPinString(pin16, activeFmt),
+    carrier: activeFmt.name,
     carrierId: activeFmt.id,
-    confidence: Math.round(confidence),
+    confidence,
     digits,
     status,
     errorMessage,
     timestamp: Date.now(),
     imageUrl,
     manualEditsCount: 0,
-    qualityCheck: {
-      resolutionOk: true,
-      lightingOk: true,
-      blurDetected: confidence < 80
-    }
+    qualityCheck: details.qualityCheck
   };
 }

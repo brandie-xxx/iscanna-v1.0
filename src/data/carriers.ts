@@ -7,7 +7,7 @@ export const DEFAULT_FORMATS: FormatConfig[] = [
     prefix: '*133*',
     suffix: '#',
     isDefault: true,
-    carrierPrefixes: ['4022', '133', '40'],
+    carrierPrefixes: ['4022'],
     description: 'NetOne Zimbabwe (*133*PIN#)'
   },
   {
@@ -15,26 +15,19 @@ export const DEFAULT_FORMATS: FormatConfig[] = [
     name: 'Econet',
     prefix: '*150*',
     suffix: '#',
-    carrierPrefixes: ['3630', '150', '36'],
+    carrierPrefixes: ['3630'],
     description: 'Econet Wireless (*150*PIN#)'
   }
 ];
 
-export function detectCarrierByPin(pin: string, formats: FormatConfig[] = DEFAULT_FORMATS): FormatConfig {
+// Returns the carrier whose card-number prefix matches, or undefined when none does
+export function detectCarrierByPin(pin: string, formats: FormatConfig[] = DEFAULT_FORMATS): FormatConfig | undefined {
   const cleanPin = pin.replace(/\D/g, '');
-  
-  for (const fmt of formats) {
-    if (fmt.carrierPrefixes && fmt.carrierPrefixes.length > 0) {
-      for (const prefix of fmt.carrierPrefixes) {
-        if (cleanPin.startsWith(prefix)) {
-          return fmt;
-        }
-      }
-    }
-  }
+  return formats.find(fmt => fmt.carrierPrefixes?.some(prefix => cleanPin.startsWith(prefix)));
+}
 
-  // Default to NetOne or first available
-  return formats.find(f => f.isDefault) || formats[0];
+export function findFormatById(id: string): FormatConfig | undefined {
+  return DEFAULT_FORMATS.find(f => f.id === id);
 }
 
 export function wrapPinString(pin: string, format: FormatConfig): string {
