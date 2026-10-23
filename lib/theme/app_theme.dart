@@ -22,9 +22,22 @@ abstract final class AppColors {
 }
 
 abstract final class AppRadius {
-  static const panel = 14.0;
+  static const panel = 16.0;
   static const control = 10.0;
   static const chip = 7.0;
+}
+
+/// Spacing scale. Use these instead of ad-hoc numbers so rhythm stays consistent.
+abstract final class AppSpace {
+  static const xs = 4.0;
+  static const sm = 8.0;
+  static const md = 12.0;
+  static const lg = 16.0;
+  static const xl = 20.0;
+  static const xxl = 28.0;
+
+  /// Horizontal page margin.
+  static const gutter = 16.0;
 }
 
 /// Minimum touch target, matching the web app's 44px buttons.

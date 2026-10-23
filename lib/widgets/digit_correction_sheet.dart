@@ -37,7 +37,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
   void initState() {
     super.initState();
     _digits = widget.card.rawPin.padRight(kPinLength, '0').substring(0, kPinLength).split('');
-    // Start on the least certain digit (e.g. a scratched one).
+    // Start on the least certain digit (e.g. one the scan couldn't read).
     final digits = widget.card.digits;
     _selected = digits.isEmpty ? 0 : digits.reduce((a, b) => b.confidence < a.confidence ? b : a).index;
   }
@@ -79,7 +79,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.fromLTRB(AppSpace.xl, AppSpace.xs, AppSpace.xl, AppSpace.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -94,41 +94,38 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                for (var block = 0; block < 4; block++) ...[
-                  if (block > 0) const SizedBox(width: 6),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.circular(AppRadius.chip),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
+            const SizedBox(height: AppSpace.lg),
+            // One row of 4 groups when each digit has room; otherwise two rows of 2 groups.
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final minDigitWidth = MediaQuery.textScalerOf(context).scale(22);
+                final groupsPerRow = constraints.maxWidth / kPinLength >= minDigitWidth ? 4 : 2;
+                return Column(
+                  children: [
+                    for (var row = 0; row < 4 ~/ groupsPerRow; row++) ...[
+                      if (row > 0) const SizedBox(height: AppSpace.sm),
+                      Row(
                         children: [
-                          for (var sub = 0; sub < 4; sub++) ...[
-                            if (sub > 0) const SizedBox(width: 2),
-                            Expanded(child: _digitCell(block * 4 + sub, lowConfidence)),
+                          for (var g = 0; g < groupsPerRow; g++) ...[
+                            if (g > 0) const SizedBox(width: AppSpace.sm),
+                            Expanded(child: _group(row * groupsPerRow + g, lowConfidence)),
                           ],
                         ],
                       ),
-                    ),
-                  ),
-                ],
-              ],
+                    ],
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpace.lg),
             Inset(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpace.sm),
               child: GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
+                mainAxisSpacing: AppSpace.sm,
+                crossAxisSpacing: AppSpace.sm,
                 childAspectRatio: 2.4,
                 children: [
                   for (final n in ['1', '2', '3', '4', '5', '6', '7', '8', '9']) _Key(label: n, onTap: () => _press(n)),
@@ -138,18 +135,24 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpace.lg),
             Row(
               children: [
                 Expanded(
-                  child: AppButton(label: 'Cancel', expand: true, onPressed: () => Navigator.of(context).pop()),
+                  child: AppButton(
+                    label: 'Cancel',
+                    expand: true,
+                    height: 48,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpace.md),
                 Expanded(
                   child: AppButton(
                     label: 'Save',
                     variant: ButtonVariant.primary,
                     expand: true,
+                    height: 48,
                     haptic: false,
                     onPressed: _save,
                   ),
@@ -158,6 +161,25 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _group(int block, Set<int> lowConfidence) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpace.xs),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(AppRadius.chip + 1),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          for (var sub = 0; sub < 4; sub++) ...[
+            if (sub > 0) const SizedBox(width: 3),
+            Expanded(child: _digitCell(block * 4 + sub, lowConfidence)),
+          ],
+        ],
       ),
     );
   }
@@ -177,7 +199,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          height: 40,
+          height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected ? AppColors.accent : AppColors.surface,

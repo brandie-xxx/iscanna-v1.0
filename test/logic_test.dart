@@ -173,10 +173,11 @@ void main() {
       app.incrementTarget();
       await app.scanSample(kSampleScenarios[1]);
       await app.scanSample(kSampleScenarios[1]);
-      await app.scanSample(kSampleScenarios[2]); // damaged: needs review
+      ocr.results['partial.jpg'] = const OcrResult('4022 6224 05', 95); // incomplete: needs review
+      await app.scanPhoto('partial.jpg');
       expect(app.batch.map((c) => c.rawPin), ['3630146682113274']);
       expect(app.card?.status, CardStatus.warning);
-      expect(app.card?.digits[10].confidence, 55);
+      expect(app.card?.digits[10].confidence, 0);
     });
 
     test('corrections and carrier switches update the batch copy', () async {
@@ -187,6 +188,13 @@ void main() {
       app.selectFormat(econet);
       expect(app.batch.single.wrappedPin, '*121*4022622405821560#');
       expect(app.card?.carrierName, 'Econet');
+    });
+
+    test('samples are one clean card per carrier', () {
+      expect(kSampleScenarios.map((s) => s.carrierName), ['NetOne', 'Econet']);
+      for (final s in kSampleScenarios) {
+        expect(parsePinText(s.expectedPin, fallbackFormat: netOne, confidence: s.confidence).canDial, isTrue);
+      }
     });
 
     test('rescan replays the current source', () async {

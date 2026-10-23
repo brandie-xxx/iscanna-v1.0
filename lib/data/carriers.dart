@@ -30,7 +30,7 @@ String wrapPin(String pin, CarrierFormat format) =>
 const List<SampleScenario> kSampleScenarios = [
   SampleScenario(
     id: 'sample-netone',
-    title: 'NetOne (*133*)',
+    title: 'NetOne card',
     subtitle: 'Clear 16-digit voucher PIN',
     expectedPin: '4022622405821561',
     carrierName: 'NetOne',
@@ -39,21 +39,11 @@ const List<SampleScenario> kSampleScenarios = [
   ),
   SampleScenario(
     id: 'sample-econet',
-    title: 'Econet (*121*)',
+    title: 'Econet card',
     subtitle: 'High accuracy 16-digit voucher',
     expectedPin: '3630146682113274',
     carrierName: 'Econet',
     confidence: 96,
     footnote: 'Dial *121*PIN# to recharge',
-  ),
-  SampleScenario(
-    id: 'sample-netone-damaged',
-    title: 'NetOne (Damaged Digit)',
-    subtitle: 'Simulated scratch on 1 digit (4022 6224 05?2 1561)',
-    expectedPin: '4022622405821561',
-    carrierName: 'NetOne',
-    confidence: 76,
-    footnote: 'Tap Edit to correct blurred digit',
-    damagedDigitIndex: 10,
   ),
 ];

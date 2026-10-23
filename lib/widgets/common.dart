@@ -5,7 +5,7 @@ import '../theme/app_theme.dart';
 
 /// Rounded container used for every top-level section.
 class Panel extends StatelessWidget {
-  const Panel({super.key, required this.child, this.padding = const EdgeInsets.all(14)});
+  const Panel({super.key, required this.child, this.padding = const EdgeInsets.all(AppSpace.lg)});
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -26,6 +26,7 @@ class Panel extends StatelessWidget {
 }
 
 /// Panel title row with a hairline divider underneath.
+/// The title side takes all space the trailing widget doesn't need, so it is never cut short.
 class PanelHeader extends StatelessWidget {
   const PanelHeader({super.key, required this.title, this.leadingBadge, this.trailing});
 
@@ -36,19 +37,46 @@ class PanelHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(bottom: 12),
-      margin: const EdgeInsets.only(bottom: 12),
+      constraints: const BoxConstraints(minHeight: 36),
+      padding: const EdgeInsets.only(bottom: AppSpace.md),
+      margin: const EdgeInsets.only(bottom: AppSpace.lg),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColors.divider)),
       ),
       child: Row(
         children: [
-          Flexible(
-            child: Text(title, style: AppText.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(title, style: AppText.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
+                if (leadingBadge != null) ...[const SizedBox(width: AppSpace.sm), leadingBadge!],
+              ],
+            ),
           ),
-          if (leadingBadge != null) ...[const SizedBox(width: 8), Flexible(child: leadingBadge!)],
-          const Spacer(),
-          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+          if (trailing != null) ...[const SizedBox(width: AppSpace.md), trailing!],
+        ],
+      ),
+    );
+  }
+}
+
+/// Small uppercase heading above a control group, e.g. "CARRIER".
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key, this.trailing});
+
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSpace.xs, bottom: AppSpace.sm),
+      child: Row(
+        children: [
+          Expanded(child: Text(text.toUpperCase(), style: AppText.label)),
+          ?trailing,
         ],
       ),
     );
@@ -57,7 +85,7 @@ class PanelHeader extends StatelessWidget {
 
 /// Darker recessed box used inside panels.
 class Inset extends StatelessWidget {
-  const Inset({super.key, required this.child, this.padding = const EdgeInsets.all(14)});
+  const Inset({super.key, required this.child, this.padding = const EdgeInsets.all(AppSpace.lg)});
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -78,15 +106,16 @@ class Inset extends StatelessWidget {
 }
 
 abstract final class AppText {
-  static const title = TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary);
-  static const body = TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.5);
+  static const title = TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary);
+  static const body = TextStyle(fontSize: 12.5, color: AppColors.textMuted, height: 1.55);
   static const label = TextStyle(
     fontSize: 10.5,
     color: AppColors.textMuted,
-    letterSpacing: 1.0,
+    letterSpacing: 1.2,
     fontWeight: FontWeight.w500,
+    height: 1.3,
   );
-  static const button = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600);
+  static const button = TextStyle(fontSize: 13, fontWeight: FontWeight.w600);
 }
 
 /// Small rounded tag, e.g. the carrier name or "Verified".
@@ -104,7 +133,7 @@ class Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm, vertical: 3),
       decoration: BoxDecoration(
         color: filled
             ? AppColors.accent
@@ -199,15 +228,19 @@ class _AppButtonState extends State<AppButton> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (widget.icon != null) Icon(widget.icon, size: 16, color: fg),
-        if (widget.icon != null && !widget.iconOnly) const SizedBox(width: 6),
+        if (widget.icon != null && !widget.iconOnly) const SizedBox(width: AppSpace.sm),
         if (!widget.iconOnly)
           Flexible(
-            child: Text(
-              widget.label,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.button.copyWith(
-                color: fg,
-                fontWeight: widget.variant == ButtonVariant.primary ? FontWeight.w700 : FontWeight.w600,
+            // Shrinks a little rather than cutting the label off when space is tight.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                style: AppText.button.copyWith(
+                  color: fg,
+                  fontWeight: widget.variant == ButtonVariant.primary ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -240,7 +273,7 @@ class _AppButtonState extends State<AppButton> {
               duration: const Duration(milliseconds: 120),
               height: widget.height,
               constraints: BoxConstraints(minWidth: widget.iconOnly ? widget.height : 0),
-              padding: EdgeInsets.symmetric(horizontal: widget.iconOnly ? 0 : 14),
+              padding: EdgeInsets.symmetric(horizontal: widget.iconOnly ? 0 : AppSpace.md),
               decoration: BoxDecoration(
                 color: bg,
                 borderRadius: BorderRadius.circular(AppRadius.control),
@@ -298,13 +331,20 @@ class SegmentTrack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(AppSpace.xs),
       decoration: BoxDecoration(
         color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppRadius.control),
+        borderRadius: BorderRadius.circular(AppRadius.control + 2),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(children: [for (final c in children) Expanded(child: c)]),
+      child: Row(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(width: AppSpace.xs),
+            Expanded(child: children[i]),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -344,28 +384,32 @@ class SegmentOption extends StatelessWidget {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
           decoration: BoxDecoration(
             color: selected ? AppColors.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.chip),
+            borderRadius: BorderRadius.circular(AppRadius.control - 2),
             border: Border.all(color: selected ? AppColors.borderStrong : Colors.transparent),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              RadioDot(selected: selected),
-              const SizedBox(width: 6),
-              if (icon != null) ...[Icon(icon, size: 14, color: color), const SizedBox(width: 6)],
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: color),
-                ),
+          // Scales down as a unit on narrow screens instead of truncating.
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioDot(selected: selected),
+                  const SizedBox(width: AppSpace.sm),
+                  if (icon != null) ...[Icon(icon, size: 15, color: color), const SizedBox(width: 6)],
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color),
+                  ),
+                  if (trailing != null) ...[const SizedBox(width: AppSpace.sm), trailing!],
+                ],
               ),
-              if (trailing != null) ...[const SizedBox(width: 6), trailing!],
-            ],
+            ),
           ),
         ),
       ),

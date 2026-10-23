@@ -150,7 +150,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PanelHeader(
-            title: 'Camera & Scanner',
+            title: 'Scanner',
             leadingBadge: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: app.isScanning ? const _ScanningTag() : const SizedBox.shrink(),
@@ -159,17 +159,11 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
           ),
           if (app.targetScanCount > 1) ...[
             _TargetProgress(current: app.batch.length, target: app.targetScanCount),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpace.md),
           ],
           _viewport(app),
-          Container(
-            margin: const EdgeInsets.only(top: 14),
-            padding: const EdgeInsets.only(top: 12),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.divider)),
-            ),
-            child: _controls(app),
-          ),
+          const SizedBox(height: AppSpace.lg),
+          _controls(app),
         ],
       ),
     );
@@ -196,13 +190,13 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
                     ? _LiveFeed(key: const ValueKey('live'), camera: _camera!)
                     : preview != null
                     ? _PreviewImage(key: ValueKey(preview), source: preview, processing: app.isScanning)
-                    : _EmptyViewport(key: const ValueKey('empty'), onPick: _pickFromGallery),
+                    : const _EmptyViewport(key: ValueKey('empty')),
               ),
               if (_cameraActive) const _FrameGuides(),
               if (_cameraActive)
                 Positioned(
-                  top: 10,
-                  right: 10,
+                  top: AppSpace.md,
+                  right: AppSpace.md,
                   child: _RoundIconButton(
                     icon: _torchOn ? LucideIcons.zap : LucideIcons.zapOff,
                     label: _torchOn ? 'Turn torch off' : 'Turn torch on',
@@ -211,7 +205,12 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
                   ),
                 ),
               if (_cameraError != null)
-                Positioned(left: 10, right: 10, bottom: 10, child: _ErrorStrip(message: _cameraError!)),
+                Positioned(
+                  left: AppSpace.md,
+                  right: AppSpace.md,
+                  bottom: AppSpace.md,
+                  child: _ErrorStrip(message: _cameraError!),
+                ),
             ],
           ),
         ),
@@ -229,36 +228,54 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
               icon: LucideIcons.scanLine,
               variant: ButtonVariant.primary,
               expand: true,
+              height: 48,
               haptic: false,
               onPressed: app.isScanning ? null : _capture,
             ),
           ),
-          const SizedBox(width: 8),
-          AppButton(label: 'Cancel', variant: ButtonVariant.secondary, onPressed: _stopCamera),
+          const SizedBox(width: AppSpace.md),
+          AppButton(label: 'Cancel', height: 48, onPressed: _stopCamera),
         ],
       );
     }
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: AppButton(
-            label: _starting ? 'Opening…' : 'Open Camera',
-            icon: LucideIcons.camera,
-            expand: true,
-            onPressed: _starting ? null : _startCamera,
-          ),
-        ),
         if (app.preview != null) ...[
-          const SizedBox(width: 8),
-          AppButton(label: 'Upload photo', icon: LucideIcons.upload, iconOnly: true, onPressed: _pickFromGallery),
-          const SizedBox(width: 8),
           AppButton(
-            label: 'Re-Scan',
+            label: app.isScanning ? 'Reading…' : 'Re-Scan',
             icon: LucideIcons.refreshCw,
             variant: ButtonVariant.primary,
+            expand: true,
+            height: 48,
             onPressed: app.isScanning ? null : app.rescan,
           ),
+          const SizedBox(height: AppSpace.md),
         ],
+        Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                label: _starting ? 'Opening…' : 'Camera',
+                icon: LucideIcons.camera,
+                variant: app.preview == null ? ButtonVariant.primary : ButtonVariant.secondary,
+                expand: true,
+                semanticLabel: 'Open camera',
+                onPressed: _starting ? null : _startCamera,
+              ),
+            ),
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: AppButton(
+                label: 'Upload',
+                icon: LucideIcons.upload,
+                semanticLabel: 'Upload photo',
+                expand: true,
+                onPressed: _pickFromGallery,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -414,7 +431,7 @@ class _TargetProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final fraction = (current / target).clamp(0.0, 1.0);
     return Inset(
-      padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
+      padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
       child: Column(
         children: [
           Row(
@@ -566,31 +583,38 @@ class _PreviewImage extends StatelessWidget {
 }
 
 class _EmptyViewport extends StatelessWidget {
-  const _EmptyViewport({super.key, required this.onPick});
-
-  final VoidCallback onPick;
+  const _EmptyViewport({super.key});
 
   @override
   Widget build(BuildContext context) {
     // Scrolls instead of overflowing when large text doesn't fit the 4:3 viewport.
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpace.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Icon(LucideIcons.scanLine, size: 22, color: AppColors.accent),
+            ),
+            const SizedBox(height: AppSpace.lg),
             const Text(
-              'Place NetOne or Econet card in frame or upload photo',
+              'Open the camera or upload a photo of a NetOne or Econet card',
               textAlign: TextAlign.center,
               style: AppText.body,
             ),
-            const SizedBox(height: 12),
-            AppButton(label: 'Select Card Photo', icon: LucideIcons.upload, highlighted: true, onPressed: onPick),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpace.sm),
             const Text(
               'Photos are read on this device. Nothing is uploaded.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 10.5, color: AppColors.textFaint),
+              style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
             ),
           ],
         ),

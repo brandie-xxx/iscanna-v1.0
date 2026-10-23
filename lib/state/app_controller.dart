@@ -113,20 +113,8 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  ScannedCard _sampleCard(SampleScenario sample, CardSource source) {
-    var card = parsePinText(sample.expectedPin, fallbackFormat: _format, confidence: sample.confidence, source: source);
-    final damaged = sample.damagedDigitIndex;
-    if (damaged != null) {
-      final digits = [...card.digits];
-      digits[damaged] = digits[damaged].copyWith(confidence: 55);
-      card = card.copyWith(
-        digits: digits,
-        status: CardStatus.warning,
-        errorMessage: () => 'Scratch on digit ${damaged + 1}. Please verify.',
-      );
-    }
-    return card;
-  }
+  ScannedCard _sampleCard(SampleScenario sample, CardSource source) =>
+      parsePinText(sample.expectedPin, fallbackFormat: _format, confidence: sample.confidence, source: source);
 
   void _showCard(ScannedCard card) {
     _scanError = null;

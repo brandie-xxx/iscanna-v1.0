@@ -13,7 +13,6 @@ class SampleCardArt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pin = scenario.expectedPin;
-    final damaged = scenario.damagedDigitIndex;
 
     return Semantics(
       image: true,
@@ -76,9 +75,7 @@ class SampleCardArt extends StatelessWidget {
                           children: [
                             for (var i = 0; i < pin.length; i++) ...[
                               if (i > 0 && i % 4 == 0) const TextSpan(text: ' '),
-                              i == damaged
-                                  ? const WidgetSpan(alignment: PlaceholderAlignment.middle, child: _Scratch())
-                                  : TextSpan(text: pin[i]),
+                              TextSpan(text: pin[i]),
                             ],
                           ],
                         ),
@@ -103,22 +100,6 @@ class SampleCardArt extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Scratch extends StatelessWidget {
-  const _Scratch();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22,
-      height: 52,
-      margin: const EdgeInsets.only(right: 4),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: const Color(0xFF111216), borderRadius: BorderRadius.circular(4)),
-      child: const Text('?', style: TextStyle(color: AppColors.textMuted, fontSize: 16, letterSpacing: 0)),
     );
   }
 }

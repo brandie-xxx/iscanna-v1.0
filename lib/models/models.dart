@@ -31,9 +31,6 @@ class DigitConfidence {
   final int confidence;
 
   bool get isLowConfidence => confidence < 80;
-
-  DigitConfidence copyWith({int? confidence}) =>
-      DigitConfidence(index: index, char: char, confidence: confidence ?? this.confidence);
 }
 
 /// Where a scan came from: a photo on disk, or a built-in sample card.
@@ -124,7 +121,6 @@ class SampleScenario {
     required this.carrierName,
     required this.confidence,
     required this.footnote,
-    this.damagedDigitIndex,
   });
 
   final String id;
@@ -136,9 +132,4 @@ class SampleScenario {
 
   /// Line printed at the bottom of the drawn sample card.
   final String footnote;
-
-  /// When set, this digit is drawn scratched out and flagged for review.
-  final int? damagedDigitIndex;
-
-  bool get hasDamage => damagedDigitIndex != null;
 }

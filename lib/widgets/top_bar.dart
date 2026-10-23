@@ -21,9 +21,9 @@ class AppHeader extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: SizedBox(
-          height: 52,
+          height: 56,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.gutter),
             child: Row(
               children: [
                 Container(
@@ -31,7 +31,7 @@ class AppHeader extends StatelessWidget {
                   height: 8,
                   decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpace.sm),
                 Semantics(
                   header: true,
                   label: 'iscanna 1.0',
@@ -61,7 +61,7 @@ class AppHeader extends StatelessWidget {
   }
 }
 
-/// Mode (Scan / Batch) and carrier (NetOne / Econet) radio groups.
+/// Mode (Scan / Batch) switch, followed by the carrier (NetOne / Econet) choice.
 class NavigationControlBar extends StatelessWidget {
   const NavigationControlBar({super.key, required this.controller});
 
@@ -71,64 +71,75 @@ class NavigationControlBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final batchCount = controller.batch.length;
     final onBatch = controller.tab == AppTab.batch;
-    return Panel(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        children: [
-          SegmentTrack(
-            children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SegmentTrack(
+          children: [
+            SegmentOption(
+              selected: !onBatch,
+              label: 'Scan',
+              icon: LucideIcons.camera,
+              onTap: () => controller.selectTab(AppTab.scanner),
+            ),
+            SegmentOption(
+              selected: onBatch,
+              label: 'Batch',
+              icon: LucideIcons.layers,
+              semanticLabel: 'Batch, $batchCount queued',
+              trailing: batchCount > 0 ? _CountBubble(count: batchCount, active: onBatch) : null,
+              onTap: () => controller.selectTab(AppTab.batch),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.xl),
+        const SectionLabel('Carrier'),
+        SegmentTrack(
+          children: [
+            for (final fmt in kCarrierFormats)
               SegmentOption(
-                selected: !onBatch,
-                label: 'Scan',
-                icon: LucideIcons.camera,
-                onTap: () => controller.selectTab(AppTab.scanner),
+                selected: controller.format.id == fmt.id,
+                label: fmt.name,
+                semanticLabel: '${fmt.name} format ${fmt.pattern}',
+                trailing: Text(fmt.prefix, style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                onTap: () => controller.selectFormat(fmt),
               ),
-              SegmentOption(
-                selected: onBatch,
-                label: 'Batch',
-                icon: LucideIcons.layers,
-                semanticLabel: 'Batch, $batchCount queued',
-                trailing: batchCount > 0
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: onBatch ? AppColors.accent : AppColors.border,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          '$batchCount',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: onBatch ? AppColors.background : AppColors.textSecondary,
-                          ),
-                        ),
-                      )
-                    : null,
-                onTap: () => controller.selectTab(AppTab.batch),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SegmentTrack(
-            children: [
-              for (final fmt in kCarrierFormats)
-                SegmentOption(
-                  selected: controller.format.id == fmt.id,
-                  label: fmt.name,
-                  semanticLabel: '${fmt.name} format ${fmt.pattern}',
-                  trailing: Text(fmt.prefix, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                  onTap: () => controller.selectFormat(fmt),
-                ),
-            ],
-          ),
-        ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CountBubble extends StatelessWidget {
+  const _CountBubble({required this.count, required this.active});
+
+  final int count;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: active ? AppColors.accent : AppColors.border,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        '$count',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          color: active ? AppColors.background : AppColors.textSecondary,
+        ),
       ),
     );
   }
 }
 
-/// Horizontally scrolling preset chips that load a drawn sample card.
+/// Labelled row of equal-width chips that load a drawn sample card.
 class SampleCardSelector extends StatelessWidget {
   const SampleCardSelector({super.key, required this.controller});
 
@@ -136,36 +147,33 @@ class SampleCardSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: kSampleScenarios.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, i) {
-          final sc = kSampleScenarios[i];
-          return SegmentOptionChip(
-            selected: controller.activeSampleId == sc.id,
-            label: sc.title,
-            semanticLabel: 'Sample: ${sc.title}. ${sc.subtitle}',
-            onTap: () => controller.scanSample(sc),
-          );
-        },
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionLabel('Try a sample card'),
+        Row(
+          children: [
+            for (var i = 0; i < kSampleScenarios.length; i++) ...[
+              if (i > 0) const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: SampleChip(
+                  selected: controller.activeSampleId == kSampleScenarios[i].id,
+                  label: kSampleScenarios[i].title,
+                  semanticLabel: 'Sample: ${kSampleScenarios[i].title}. ${kSampleScenarios[i].subtitle}',
+                  onTap: () => controller.scanSample(kSampleScenarios[i]),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }
 
-/// Standalone outlined chip variant of [SegmentOption].
-class SegmentOptionChip extends StatelessWidget {
-  const SegmentOptionChip({
-    super.key,
-    required this.selected,
-    required this.onTap,
-    required this.label,
-    this.semanticLabel,
-  });
+/// Outlined chip with a radio dot; scales its content down rather than truncating.
+class SampleChip extends StatelessWidget {
+  const SampleChip({super.key, required this.selected, required this.onTap, required this.label, this.semanticLabel});
 
   final bool selected;
   final VoidCallback onTap;
@@ -181,31 +189,42 @@ class SegmentOptionChip extends StatelessWidget {
       label: semanticLabel ?? label,
       excludeSemantics: true,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           HapticFeedback.selectionClick();
           onTap();
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          height: kMinTouchTarget,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
           decoration: BoxDecoration(
             color: selected ? AppColors.surface : AppColors.panel,
             borderRadius: BorderRadius.circular(AppRadius.control),
             border: Border.all(color: selected ? AppColors.accent : AppColors.border),
           ),
-          child: Row(
-            children: [
-              RadioDot(selected: selected),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-                ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioDot(selected: selected),
+                  const SizedBox(width: AppSpace.sm),
+                  Icon(LucideIcons.creditCard, size: 15, color: selected ? AppColors.accent : AppColors.textMuted),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

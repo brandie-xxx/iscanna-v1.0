@@ -119,74 +119,39 @@ class _BatchProcessingViewState extends State<BatchProcessingView> {
             leadingBadge: Tag('${cards.length}'),
             trailing: cards.isEmpty
                 ? null
-                : AppButton(label: 'Clear', icon: LucideIcons.trash2, height: 36, onPressed: _confirmClear),
+                : AppButton(label: 'Clear', icon: LucideIcons.trash2, height: 40, onPressed: _confirmClear),
           ),
           if (cards.isEmpty)
             _EmptyQueue(onScan: () => _app.selectTab(AppTab.scanner))
           else ...[
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(AppRadius.control),
-                border: Border.all(color: AppColors.border),
+            for (var i = 0; i < cards.length; i++) ...[
+              if (i > 0) const SizedBox(height: AppSpace.sm),
+              _BatchRow(
+                key: ValueKey(cards[i].id),
+                index: i,
+                card: cards[i],
+                onDial: () => widget.onDial(cards[i]),
+                onEdit: () {
+                  _app.focusCard(cards[i]);
+                  DigitCorrectionSheet.show(context, _app, cards[i]);
+                },
+                onRemove: () => _remove(cards[i]),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                children: [
-                  for (var i = 0; i < cards.length; i++) ...[
-                    if (i > 0) const Divider(height: 1, thickness: 1, color: AppColors.divider),
-                    _BatchRow(
-                      key: ValueKey(cards[i].id),
-                      index: i,
-                      card: cards[i],
-                      onDial: () => widget.onDial(cards[i]),
-                      onEdit: () {
-                        _app.focusCard(cards[i]);
-                        DigitCorrectionSheet.show(context, _app, cards[i]);
-                      },
-                      onRemove: () => _remove(cards[i]),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(AppRadius.control),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  const Text('FORMAT', style: AppText.label),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    // Scale down rather than overflow on narrow screens / large text.
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          for (final f in ExportFormat.values)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: _FormatOption(
-                                format: f,
-                                selected: f == _format,
-                                onTap: () => setState(() => _format = f),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+            ],
+            const SizedBox(height: AppSpace.xl),
+            const SectionLabel('Export format'),
+            SegmentTrack(
+              children: [
+                for (final f in ExportFormat.values)
+                  SegmentOption(
+                    selected: f == _format,
+                    label: f.extension.toUpperCase(),
+                    semanticLabel: 'Export as ${f.extension}',
+                    onTap: () => setState(() => _format = f),
                   ),
-                ],
-              ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.md),
             Row(
               children: [
                 Expanded(
@@ -195,10 +160,11 @@ class _BatchProcessingViewState extends State<BatchProcessingView> {
                     icon: _copiedAll ? LucideIcons.check : LucideIcons.copy,
                     highlighted: _copiedAll,
                     expand: true,
+                    height: 48,
                     onPressed: _copyAll,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpace.md),
                 Expanded(
                   child: Builder(
                     builder: (btnContext) => AppButton(
@@ -206,6 +172,7 @@ class _BatchProcessingViewState extends State<BatchProcessingView> {
                       icon: LucideIcons.share2,
                       variant: ButtonVariant.primary,
                       expand: true,
+                      height: 48,
                       onPressed: _exporting
                           ? null
                           : () {
@@ -226,6 +193,7 @@ class _BatchProcessingViewState extends State<BatchProcessingView> {
   }
 }
 
+/// One queued card: header row with number, carrier and actions; then the full USSD code and PIN.
 class _BatchRow extends StatelessWidget {
   const _BatchRow({
     super.key,
@@ -244,130 +212,116 @@ class _BatchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppRadius.control);
     return Dismissible(
       key: ValueKey('dismiss-${card.id}'),
       direction: DismissDirection.endToStart,
       onDismissed: (_) => onRemove(),
       background: Container(
-        color: AppColors.surface,
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: radius),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
+        padding: const EdgeInsets.only(right: AppSpace.xl),
         child: const Icon(LucideIcons.trash2, size: 18, color: AppColors.accent),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 8, 6, 8),
-        child: Row(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.sm, AppSpace.sm, AppSpace.lg),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: radius,
+          border: Border.all(color: card.canDial ? AppColors.border : AppColors.accent.withValues(alpha: 0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 22,
-              child: Text(
-                '${index + 1}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(6)),
+                        child: Text(
+                          '${index + 1}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.sm),
+                      Flexible(child: Tag(card.carrierName)),
+                      if (!card.canDial) ...[
+                        const SizedBox(width: 6),
+                        const Flexible(child: Tag('Review', soft: true)),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpace.xs),
+                AppButton(
+                  label: card.canDial ? 'Dial voucher' : 'Fix PIN before dialing',
+                  icon: LucideIcons.phoneCall,
+                  variant: ButtonVariant.ghost,
+                  highlighted: true,
+                  iconOnly: true,
+                  haptic: false,
+                  onPressed: card.canDial ? onDial : null,
+                ),
+                AppButton(
+                  label: 'Edit digits',
+                  icon: LucideIcons.penLine,
+                  variant: ButtonVariant.ghost,
+                  iconOnly: true,
+                  onPressed: onEdit,
+                ),
+                AppButton(
+                  label: 'Remove',
+                  icon: LucideIcons.trash2,
+                  variant: ButtonVariant.ghost,
+                  iconOnly: true,
+                  onPressed: onRemove,
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            const SizedBox(height: AppSpace.xs),
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpace.sm),
+              // The whole code is always visible: it shrinks to fit rather than being cut off.
+              child: SizedBox(
+                width: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
                     card.wrappedPin,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
+                      letterSpacing: 0.8,
                       fontFeatures: [FontFeature.tabularFigures()],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${card.carrierName} • ${card.formattedPin}${card.canDial ? '' : ' • needs review'}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
-                  ),
-                ],
-              ),
-            ),
-            AppButton(
-              label: card.canDial ? 'Dial voucher' : 'Review PIN before dialing',
-              icon: LucideIcons.phoneCall,
-              variant: ButtonVariant.ghost,
-              highlighted: true,
-              iconOnly: true,
-              height: 40,
-              haptic: false,
-              onPressed: card.canDial ? onDial : null,
-            ),
-            AppButton(
-              label: 'Edit digits',
-              icon: LucideIcons.penLine,
-              variant: ButtonVariant.ghost,
-              iconOnly: true,
-              height: 40,
-              onPressed: onEdit,
-            ),
-            AppButton(
-              label: 'Remove',
-              icon: LucideIcons.trash2,
-              variant: ButtonVariant.ghost,
-              iconOnly: true,
-              height: 40,
-              onPressed: onRemove,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FormatOption extends StatelessWidget {
-  const _FormatOption({required this.format, required this.selected, required this.onTap});
-
-  final ExportFormat format;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      inMutuallyExclusiveGroup: true,
-      checked: selected,
-      button: true,
-      label: 'Export as ${format.extension}',
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.chip),
-            border: Border.all(color: selected ? AppColors.borderStrong : Colors.transparent),
-          ),
-          child: Row(
-            children: [
-              RadioDot(selected: selected, size: 10),
-              const SizedBox(width: 6),
-              Text(
-                format.extension.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? AppColors.accent : AppColors.textMuted,
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: AppSpace.xs),
+            Text(
+              card.formattedPin,
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textMuted,
+                letterSpacing: 0.6,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -382,17 +336,17 @@ class _EmptyQueue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Inset(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.xl, vertical: 36),
       child: Column(
         children: [
           const Text('Queue Empty', style: AppText.title),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpace.sm),
           const Text(
             'Scan recharge vouchers to queue them for batch copying or spreadsheet export.',
             textAlign: TextAlign.center,
             style: AppText.body,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpace.xl),
           AppButton(label: 'Scan Cards', icon: LucideIcons.plus, variant: ButtonVariant.primary, onPressed: onScan),
         ],
       ),

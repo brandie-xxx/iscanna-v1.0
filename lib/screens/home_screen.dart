@@ -61,21 +61,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                       slivers: [
                         SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpace.gutter,
+                            AppSpace.xl,
+                            AppSpace.gutter,
+                            AppSpace.xxl,
+                          ),
                           sliver: SliverList.list(
                             children: [
                               NavigationControlBar(controller: app),
-                              const SizedBox(height: 12),
-                              SampleCardSelector(controller: app),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppSpace.xl),
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 220),
                                 child: app.tab == AppTab.scanner
                                     ? Column(
                                         key: const ValueKey('scanner'),
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
                                         children: [
+                                          SampleCardSelector(controller: app),
+                                          const SizedBox(height: AppSpace.xl),
                                           CameraCapture(controller: app),
-                                          const SizedBox(height: 12),
+                                          const SizedBox(height: AppSpace.lg),
                                           CardResultsView(controller: app, onDial: _dial),
                                         ],
                                       )
@@ -118,14 +124,19 @@ class _Footer extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.divider)),
       ),
-      padding: EdgeInsets.fromLTRB(16, 20, 16, 20 + MediaQuery.paddingOf(context).bottom),
+      padding: EdgeInsets.fromLTRB(
+        AppSpace.gutter,
+        AppSpace.xl,
+        AppSpace.gutter,
+        AppSpace.xl + MediaQuery.paddingOf(context).bottom,
+      ),
       child: const Column(
         children: [
           Text(
             'iscanna1.0',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFA1A1AA)),
           ),
-          SizedBox(height: 4),
+          SizedBox(height: AppSpace.xs + 2),
           Text('*exxstatix', style: TextStyle(fontSize: 12, color: AppColors.accent)),
         ],
       ),
