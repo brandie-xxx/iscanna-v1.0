@@ -68,7 +68,7 @@ batch dedupes by PIN and only auto-queues verified cards; stale scans are ignore
 
 ### Phase 4 — Device validation *(needs a real phone — you)*
 - Scan 20+ real NetOne/Econet cards in different light; record read accuracy.
-- Confirm dial codes (**Econet may be `*121*PIN#`, not `*150*`**) and the
+- Dial codes confirmed (NetOne `*133*PIN#`, Econet `*121*PIN#`). Still confirm the
   `4022`/`3630` card prefixes; update `lib/data/carriers.dart`.
 - Tune: crop to the frame guide before OCR if background text causes misreads.
 - **Exit:** ≥95% of clean cards read correctly with no manual edits.

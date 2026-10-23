@@ -1,9 +1,9 @@
 import '../models/models.dart';
 
-// NOTE: dial codes and card prefixes are unverified — confirm against real cards (PLAN.md, Phase 4).
+// Dial codes confirmed: NetOne *133*PIN#, Econet *121*PIN#. Card prefixes are still unverified (PLAN.md, Phase 4).
 const List<CarrierFormat> kCarrierFormats = [
   CarrierFormat(id: 'netone', name: 'NetOne', prefix: '*133*', suffix: '#', cardPrefixes: ['4022']),
-  CarrierFormat(id: 'econet', name: 'Econet', prefix: '*150*', suffix: '#', cardPrefixes: ['3630']),
+  CarrierFormat(id: 'econet', name: 'Econet', prefix: '*121*', suffix: '#', cardPrefixes: ['3630']),
 ];
 
 CarrierFormat get defaultFormat => kCarrierFormats.first;
@@ -39,12 +39,12 @@ const List<SampleScenario> kSampleScenarios = [
   ),
   SampleScenario(
     id: 'sample-econet',
-    title: 'Econet (*150*)',
+    title: 'Econet (*121*)',
     subtitle: 'High accuracy 16-digit voucher',
     expectedPin: '3630146682113274',
     carrierName: 'Econet',
     confidence: 96,
-    footnote: 'Dial *150*PIN# to recharge',
+    footnote: 'Dial *121*PIN# to recharge',
   ),
   SampleScenario(
     id: 'sample-netone-damaged',

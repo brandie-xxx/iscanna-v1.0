@@ -26,9 +26,9 @@ void main() {
     expect(find.text('Awaiting Voucher Card'), findsOneWidget);
 
     // One tap on a preset = one scan.
-    await tester.tap(find.text('Econet (*150*)'));
+    await tester.tap(find.text('Econet (*121*)'));
     await tester.pumpAndSettle();
-    expect(find.text('*150*3630146682113274#'), findsOneWidget);
+    expect(find.text('*121*3630146682113274#'), findsOneWidget);
     expect(find.text('Verified'), findsOneWidget);
 
     // Damaged sample needs review and can't be dialed.
@@ -91,7 +91,7 @@ void main() {
     await tester.pumpAndSettle();
     app.selectTab(AppTab.batch);
     await tester.pumpAndSettle();
-    expect(find.text('*150*3630146682113274#'), findsOneWidget);
+    expect(find.text('*121*3630146682113274#'), findsOneWidget);
     // Layout overflows would have been reported as test failures above.
   });
 }

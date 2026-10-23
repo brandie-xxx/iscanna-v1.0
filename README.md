@@ -2,7 +2,7 @@
 
 Mobile app (Flutter, Android + iOS) that scans NetOne / Econet recharge cards, reads the
 16-digit PIN **on-device** with Google ML Kit, wraps it in the carrier's USSD code
-(`*133*PIN#`, `*150*PIN#`) and hands it to the phone dialer. Includes digit-by-digit
+(`*133*PIN#`, `*121*PIN#`) and hands it to the phone dialer. Includes digit-by-digit
 correction and a batch queue with CSV / JSON / TXT export.
 
 See [PLAN.md](PLAN.md) for the roadmap and what still needs a real device.

@@ -49,7 +49,7 @@ void main() {
       final card = parsePinText('PIN 3630146682113274', fallbackFormat: netOne, confidence: 97);
       expect(card.rawPin, '3630146682113274');
       expect(card.carrierName, 'Econet');
-      expect(card.wrappedPin, '*150*3630146682113274#');
+      expect(card.wrappedPin, '*121*3630146682113274#');
       expect(card.status, CardStatus.success);
       expect(card.formattedPin, '3630 1466 8211 3274');
     });
@@ -63,7 +63,7 @@ void main() {
     test('uses the selected carrier when the prefix is unknown', () {
       final card = parsePinText('1234567812345678', fallbackFormat: econet);
       expect(card.carrierId, 'econet');
-      expect(card.wrappedPin, '*150*1234567812345678#');
+      expect(card.wrappedPin, '*121*1234567812345678#');
     });
 
     test('never presents a partial read as verified', () {
@@ -92,7 +92,7 @@ void main() {
       expect(fixed.status, CardStatus.success);
       expect(fixed.errorMessage, isNull);
       expect(fixed.carrierId, 'econet');
-      expect(fixed.wrappedPin, '*150*3630146682113274#');
+      expect(fixed.wrappedPin, '*121*3630146682113274#');
       expect(fixed.manualEditsCount, 1);
       expect(fixed.digits.map((d) => d.index), List.generate(16, (i) => i));
     });
@@ -100,7 +100,7 @@ void main() {
     test('switching carrier keeps label and code in agreement', () {
       final card = switchCarrier(parsePinText('4022622405821561', fallbackFormat: netOne), econet);
       expect(card.carrierName, 'Econet');
-      expect(card.wrappedPin, '*150*4022622405821561#');
+      expect(card.wrappedPin, '*121*4022622405821561#');
     });
   });
 
@@ -119,8 +119,8 @@ void main() {
 
     test('json and txt', () {
       final json = jsonDecode(buildExport(cards, ExportFormat.json)) as List;
-      expect(json.last, {'pin': '3630146682113274', 'wrapped': '*150*3630146682113274#', 'carrier': 'Econet'});
-      expect(buildExport(cards, ExportFormat.txt), '*133*4022622405821561#\n*150*3630146682113274#');
+      expect(json.last, {'pin': '3630146682113274', 'wrapped': '*121*3630146682113274#', 'carrier': 'Econet'});
+      expect(buildExport(cards, ExportFormat.txt), '*133*4022622405821561#\n*121*3630146682113274#');
     });
 
     test('file name', () {
@@ -185,7 +185,7 @@ void main() {
       app.saveCorrection(app.card!, '4022622405821560');
       expect(app.batch.single.rawPin, '4022622405821560');
       app.selectFormat(econet);
-      expect(app.batch.single.wrappedPin, '*150*4022622405821560#');
+      expect(app.batch.single.wrappedPin, '*121*4022622405821560#');
       expect(app.card?.carrierName, 'Econet');
     });
 
