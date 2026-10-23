@@ -26,8 +26,9 @@ flutter test
 dart format -l 120 lib test
 ```
 
-CI (`.github/workflows/flutter.yml`) runs these on every push and uploads a debug APK
-as the `iscanna-debug-apk` artifact. An unsigned iOS build can be started manually
+CI (`.github/workflows/flutter.yml`) runs these on every push and uploads release APKs:
+`iscanna-apk-arm64` (almost all phones) and `iscanna-apk-older-phones` (32-bit devices).
+An unsigned iOS build can be started manually
 from the Actions tab (*Run workflow* → *Also build iOS*).
 
 ## Layout
