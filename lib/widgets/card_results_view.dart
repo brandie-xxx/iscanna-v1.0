@@ -9,7 +9,7 @@ import '../theme/app_theme.dart';
 import 'common.dart';
 import 'digit_correction_sheet.dart';
 
-/// "Scanned Card" panel: status, wrapped USSD code, PIN, and Dial / Copy / Batch actions.
+/// Result section: status, USSD code readout, PIN with Edit, and Dial / Copy / Add to Batch.
 class CardResultsView extends StatefulWidget {
   const CardResultsView({super.key, required this.controller, required this.onDial});
 
@@ -36,12 +36,12 @@ class _CardResultsViewState extends State<CardResultsView> {
     }
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 240),
-      switchInCurve: Curves.easeOut,
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOutCubic,
       transitionBuilder: (child, anim) => FadeTransition(
         opacity: anim,
         child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.03), end: Offset.zero).animate(anim),
+          position: Tween(begin: const Offset(0, 0.04), end: Offset.zero).animate(anim),
           child: child,
         ),
       ),
@@ -74,131 +74,134 @@ class _CardResultsViewState extends State<CardResultsView> {
 
   Widget _result(ScannedCard card) {
     final format = findFormatById(card.carrierId);
-    final statusLabel = switch (card.status) {
-      CardStatus.success => 'Verified',
-      CardStatus.warning => 'Review Needed',
-      CardStatus.error => 'Unreadable',
-    };
 
-    return Panel(
+    return GroupedSection(
+      header: 'Result',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PanelHeader(title: 'Scanned Card', trailing: Tag(statusLabel, soft: true)),
-          if (card.errorMessage != null && !card.canDial) ...[
-            _Notice(icon: LucideIcons.circleAlert, message: card.errorMessage!),
-            const SizedBox(height: AppSpace.md),
-          ],
-          Inset(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: Text('USSD CODE · ${card.carrierName.toUpperCase()}', style: AppText.label)),
-                    if (format != null) ...[
-                      const SizedBox(width: AppSpace.sm),
-                      Text(format.pattern, style: AppText.label.copyWith(letterSpacing: 0.4)),
-                    ],
-                  ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Status and carrier wrap onto a second line rather than overflow on narrow screens.
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpace.sm,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [StatusPill(card.status), Capsule(card.carrierName)],
                 ),
-                const SizedBox(height: AppSpace.sm),
-                Semantics(
-                  label: 'USSD code ${card.wrappedPin.split('').join(' ')}',
-                  excludeSemantics: true,
-                  // Always shows the whole code: shrinks to fit instead of wrapping or cutting.
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        card.wrappedPin,
-                        maxLines: 1,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.accent,
-                          letterSpacing: 1.4,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                  ),
+              ),
+              if (format != null) ...[
+                const SizedBox(width: AppSpace.sm),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(format.pattern, style: AppText.readout.copyWith(color: AppColors.textMuted)),
                 ),
               ],
+            ],
+          ),
+          if (card.errorMessage != null && !card.canDial) ...[
+            const SizedBox(height: AppSpace.md),
+            _Notice(message: card.errorMessage!),
+          ],
+          const SizedBox(height: AppSpace.lg),
+          const Text('USSD CODE', style: AppText.sectionHeader),
+          const SizedBox(height: AppSpace.sm),
+          Semantics(
+            label: 'USSD code ${card.wrappedPin.split('').join(' ')}',
+            excludeSemantics: true,
+            // Always shows the whole code: shrinks to fit instead of wrapping or cutting.
+            child: SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  card.wrappedPin,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: kMonoFamily,
+                    fontSize: 28,
+                    letterSpacing: 1,
+                    color: card.canDial ? AppColors.accent : AppColors.textSecondary,
+                    shadows: card.canDial
+                        ? [Shadow(color: AppColors.accent.withValues(alpha: 0.35), blurRadius: 12)]
+                        : null,
+                  ),
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: AppSpace.lg),
+          const Hairline(),
           const SizedBox(height: AppSpace.md),
-          Inset(
-            padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.md, AppSpace.md),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('VOUCHER PIN', style: AppText.label),
-                      const SizedBox(height: AppSpace.xs + 2),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: _PinText(card: card),
-                        ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('VOUCHER PIN', style: AppText.sectionHeader),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: _PinText(card: card),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppSpace.md),
-                AppButton(
-                  label: 'Edit',
-                  icon: LucideIcons.penLine,
-                  highlighted: true,
-                  height: 40,
-                  semanticLabel: 'Edit PIN digits',
-                  onPressed: () => DigitCorrectionSheet.show(context, widget.controller, card),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: AppSpace.md),
+              AppButton(
+                label: 'Edit',
+                icon: LucideIcons.penLine,
+                kind: ButtonKind.tinted,
+                size: ButtonSize.small,
+                semanticLabel: 'Edit PIN digits',
+                onPressed: () => DigitCorrectionSheet.show(context, widget.controller, card),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpace.xl),
           AppButton(
-            label: card.canDial ? 'Dial ${card.carrierName} Code' : 'Fix PIN to Dial',
+            label: card.canDial ? 'Dial ${card.carrierName}' : 'Fix PIN to Dial',
             icon: LucideIcons.phoneCall,
-            variant: ButtonVariant.primary,
+            kind: ButtonKind.filled,
+            size: ButtonSize.large,
             expand: true,
-            height: 52,
             haptic: false,
             onPressed: card.canDial ? () => widget.onDial(card) : null,
           ),
           if (card.canDial && !canDialUssd) ...[
             const SizedBox(height: AppSpace.sm),
             const Text(
-              'iPhone can\'t open USSD codes from apps. Dial copies the code: paste it in Phone.',
+              "iPhone can't open USSD codes from apps, so Dial copies the code for you to paste in Phone.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted, height: 1.4),
+              style: AppText.caption,
             ),
           ],
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.sm),
           Row(
             children: [
               Expanded(
                 child: AppButton(
                   label: _copied ? 'Copied' : 'Copy Code',
                   icon: _copied ? LucideIcons.check : LucideIcons.copy,
-                  highlighted: _copied,
+                  kind: _copied ? ButtonKind.tinted : ButtonKind.gray,
                   expand: true,
                   onPressed: () => _copy(card),
                 ),
               ),
-              const SizedBox(width: AppSpace.md),
+              const SizedBox(width: AppSpace.sm),
               Expanded(
                 child: AppButton(
                   label: _added ? 'Added' : 'Add to Batch',
-                  icon: _added ? LucideIcons.check : LucideIcons.plus,
-                  highlighted: _added,
+                  icon: _added ? LucideIcons.check : LucideIcons.listPlus,
+                  kind: _added ? ButtonKind.tinted : ButtonKind.gray,
                   expand: true,
                   onPressed: () => _addToBatch(card),
                 ),
@@ -211,7 +214,7 @@ class _CardResultsViewState extends State<CardResultsView> {
   }
 }
 
-/// PIN in 4-digit groups; low-confidence digits are underlined so they're easy to spot.
+/// PIN in 4-digit groups; digits the scan couldn't read are highlighted so they're easy to spot.
 class _PinText extends StatelessWidget {
   const _PinText({required this.card});
 
@@ -223,14 +226,14 @@ class _PinText extends StatelessWidget {
       TextSpan(
         children: [
           for (final d in card.digits) ...[
-            if (d.index > 0 && d.index % 4 == 0) const TextSpan(text: ' '),
+            if (d.index > 0 && d.index % 4 == 0) const TextSpan(text: '  '),
             TextSpan(
               text: d.char,
               style: d.isLowConfidence
                   ? const TextStyle(
-                      color: AppColors.accent,
+                      color: AppColors.warning,
                       decoration: TextDecoration.underline,
-                      decorationColor: AppColors.accent,
+                      decorationColor: AppColors.warning,
                       decorationThickness: 2,
                     )
                   : null,
@@ -239,35 +242,36 @@ class _PinText extends StatelessWidget {
         ],
       ),
       semanticsLabel: 'PIN ${card.rawPin.split('').join(' ')}',
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-        letterSpacing: 1.2,
-        fontFeatures: [FontFeature.tabularFigures()],
-      ),
+      style: const TextStyle(fontFamily: kMonoFamily, fontSize: 18, color: AppColors.textPrimary, letterSpacing: 1),
     );
   }
 }
 
 class _Notice extends StatelessWidget {
-  const _Notice({required this.icon, required this.message});
+  const _Notice({required this.message});
 
-  final IconData icon;
   final String message;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       liveRegion: true,
-      child: Inset(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: AppSpace.md),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpace.md),
+        decoration: BoxDecoration(
+          color: AppColors.warning.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppRadius.control - 2),
+        ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 16, color: AppColors.accent),
-            const SizedBox(width: 8),
+            const Padding(
+              padding: EdgeInsets.only(top: 1),
+              child: Icon(LucideIcons.triangleAlert, size: 16, color: AppColors.warning),
+            ),
+            const SizedBox(width: 10),
             Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              child: Text(message, style: AppText.footnote.copyWith(color: AppColors.textSecondary)),
             ),
           ],
         ),
@@ -283,33 +287,26 @@ class _EmptyResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Panel(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+    final failed = error != null;
+    return GroupedSection(
+      header: 'Result',
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.xl, vertical: AppSpace.xxl),
       child: Column(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Icon(
-              error != null ? LucideIcons.circleAlert : LucideIcons.penLine,
-              size: 20,
-              color: AppColors.accent,
-            ),
+          Icon(
+            failed ? LucideIcons.circleAlert : LucideIcons.fileScan,
+            size: 28,
+            color: failed ? AppColors.warning : AppColors.textFaint,
           ),
-          const SizedBox(height: 12),
-          Text(error != null ? 'Scan Failed' : 'Awaiting Voucher Card', style: AppText.title),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpace.md),
+          Text(failed ? 'Scan Failed' : 'No Card Yet', style: AppText.headline.copyWith(fontSize: 16)),
+          const SizedBox(height: AppSpace.xs),
           Semantics(
-            liveRegion: error != null,
+            liveRegion: failed,
             child: Text(
-              error ?? 'Position a NetOne or Econet card in frame, upload a photo, or try a sample card above.',
+              error ?? 'The PIN and its dial code will appear here after a scan.',
               textAlign: TextAlign.center,
-              style: AppText.body,
+              style: AppText.footnote,
             ),
           ),
         ],

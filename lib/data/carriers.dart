@@ -26,24 +26,3 @@ CarrierFormat? findFormatById(String id) {
 
 String wrapPin(String pin, CarrierFormat format) =>
     '${format.prefix}${pin.replaceAll(RegExp(r'\D'), '')}${format.suffix}';
-
-const List<SampleScenario> kSampleScenarios = [
-  SampleScenario(
-    id: 'sample-netone',
-    title: 'NetOne card',
-    subtitle: 'Clear 16-digit voucher PIN',
-    expectedPin: '4022622405821561',
-    carrierName: 'NetOne',
-    confidence: 99,
-    footnote: 'Dial *133*PIN# to recharge',
-  ),
-  SampleScenario(
-    id: 'sample-econet',
-    title: 'Econet card',
-    subtitle: 'High accuracy 16-digit voucher',
-    expectedPin: '3630146682113274',
-    carrierName: 'Econet',
-    confidence: 96,
-    footnote: 'Dial *121*PIN# to recharge',
-  ),
-];

@@ -16,7 +16,7 @@ flutter pub get
 flutter run              # on a connected phone or emulator
 ```
 
-The camera needs a real device; on an emulator use **Select Card Photo** or the sample presets.
+The camera needs a real device; on an emulator use **Choose Photo**.
 
 ## Checks
 
@@ -35,17 +35,19 @@ from the Actions tab (*Run workflow* → *Also build iOS*).
 
 | Path | What |
 |---|---|
-| `lib/data/carriers.dart` | Carrier dial formats, card prefixes, sample cards — **edit here to change codes** |
+| `lib/data/carriers.dart` | Carrier dial formats and card prefixes — **edit here to change codes** |
 | `lib/services/pin_parser.dart` | OCR text → card (never invents digits) |
 | `lib/services/ocr_service.dart` | ML Kit text recognition |
 | `lib/services/dialer.dart` | `tel:` launch, clipboard |
 | `lib/services/batch_export.dart` | CSV / JSON / TXT export |
 | `lib/state/app_controller.dart` | App state and actions |
-| `lib/widgets/`, `lib/screens/` | UI |
+| `lib/screens/` | App shell with tab bar, Scan tab, Batch tab |
+| `lib/widgets/` | Scanner, result card, PIN editor, shared HIG components |
 | `lib/theme/app_theme.dart` | Colour tokens and theme |
 
 ## Notes
 
 - Photos never leave the phone; the app has no network permission requirements for scanning.
 - iOS does not allow apps to open USSD codes, so on iPhone **Dial** copies the code instead.
-- Font: Geist Pixel (SIL Open Font License, `assets/fonts/OFL.txt`).
+- Fonts: Geist for interface text and Geist Pixel for codes (SIL Open Font License,
+  `assets/fonts/OFL-Geist.txt`, `assets/fonts/OFL-GeistPixel.txt`).

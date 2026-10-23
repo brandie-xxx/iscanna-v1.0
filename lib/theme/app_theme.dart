@@ -1,33 +1,36 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Colour tokens carried over 1:1 from the web design.
+/// Colour tokens: dark grey surfaces with a baby-blue accent.
 abstract final class AppColors {
-  static const background = Color(0xFF111215);
-  static const panel = Color(0xFF181920);
-  static const surface = Color(0xFF22232C);
-  static const surfaceHover = Color(0xFF2B2C37);
-  static const inset = Color(0xFF1E1F27);
-  static const border = Color(0xFF272832);
-  static const divider = Color(0xFF24252E);
+  static const background = Color(0xFF0D0E11);
+  static const panel = Color(0xFF16171C);
+  static const surface = Color(0xFF1F2027);
+  static const surfaceHover = Color(0xFF292A33);
+  static const inset = Color(0xFF111216);
+  static const border = Color(0xFF24252E);
+  static const divider = Color(0xFF22232B);
   static const borderStrong = Color(0xFF353644);
   static const accent = Color(0xFF7DD3FC);
   static const accentPressed = Color(0xFF38BDF8);
   static const accentSoft = Color(0xFFBAE6FD);
+  static const warning = Color(0xFFFBBF24);
+  static const danger = Color(0xFFF87171);
   static const textPrimary = Color(0xFFF4F4F5);
   static const textBody = Color(0xFFE4E4E7);
-  static const textSecondary = Color(0xFF9CA3AF);
+  static const textSecondary = Color(0xFFA1A1AA);
   static const textMuted = Color(0xFF71717A);
   static const textFaint = Color(0xFF52525B);
 }
 
 abstract final class AppRadius {
-  static const panel = 16.0;
-  static const control = 10.0;
-  static const chip = 7.0;
+  static const panel = 20.0;
+  static const control = 14.0;
+  static const chip = 8.0;
 }
 
-/// Spacing scale. Use these instead of ad-hoc numbers so rhythm stays consistent.
+/// Spacing scale (8-point grid). Use these instead of ad-hoc numbers so rhythm stays consistent.
 abstract final class AppSpace {
   static const xs = 4.0;
   static const sm = 8.0;
@@ -35,15 +38,72 @@ abstract final class AppSpace {
   static const lg = 16.0;
   static const xl = 20.0;
   static const xxl = 28.0;
+  static const xxxl = 40.0;
 
   /// Horizontal page margin.
   static const gutter = 16.0;
 }
 
-/// Minimum touch target, matching the web app's 44px buttons.
+/// Minimum touch target (Apple HIG: 44pt).
 const double kMinTouchTarget = 44;
 
-const String kFontFamily = 'GeistPixel';
+/// Interface text.
+const String kFontFamily = 'Geist';
+
+/// Codes, PINs and readouts.
+const String kMonoFamily = 'GeistPixel';
+
+/// Typography, following the HIG text-style ladder.
+abstract final class AppText {
+  static const largeTitle = TextStyle(
+    fontFamily: kFontFamily,
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.8,
+    color: AppColors.textPrimary,
+  );
+  static const headline = TextStyle(
+    fontFamily: kFontFamily,
+    fontSize: 17,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.3,
+    color: AppColors.textPrimary,
+  );
+  static const body = TextStyle(
+    fontFamily: kFontFamily,
+    fontSize: 15,
+    height: 1.4,
+    letterSpacing: -0.1,
+    color: AppColors.textBody,
+  );
+  static const callout = TextStyle(fontFamily: kFontFamily, fontSize: 14, height: 1.45, color: AppColors.textSecondary);
+  static const footnote = TextStyle(fontFamily: kFontFamily, fontSize: 13, height: 1.4, color: AppColors.textMuted);
+  static const caption = TextStyle(fontFamily: kFontFamily, fontSize: 12, height: 1.3, color: AppColors.textMuted);
+
+  /// Grouped-section header: small caps, tracked out.
+  static const sectionHeader = TextStyle(
+    fontFamily: kFontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.9,
+    color: AppColors.textMuted,
+  );
+
+  /// Monospace readout for HUD labels.
+  static const readout = TextStyle(
+    fontFamily: kMonoFamily,
+    fontSize: 10.5,
+    letterSpacing: 1.2,
+    color: AppColors.accent,
+  );
+
+  static const button = TextStyle(
+    fontFamily: kFontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.2,
+  );
+}
 
 ThemeData buildAppTheme() {
   final base = ThemeData(
@@ -56,10 +116,14 @@ ThemeData buildAppTheme() {
       primary: AppColors.accent,
       onPrimary: AppColors.background,
       secondary: AppColors.accent,
+      error: AppColors.danger,
       onSurface: AppColors.textBody,
       outline: AppColors.border,
     ),
-    splashFactory: InkSparkle.splashFactory,
+    splashFactory: NoSplash.splashFactory,
+    highlightColor: Colors.transparent,
+    // iOS-style page transitions and overscroll everywhere.
+    platform: TargetPlatform.iOS,
   );
 
   return base.copyWith(
@@ -70,13 +134,16 @@ ThemeData buildAppTheme() {
     ),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: AppColors.accent,
-      selectionColor: AppColors.accent.withValues(alpha: 0.2),
+      selectionColor: AppColors.accent.withValues(alpha: 0.25),
       selectionHandleColor: AppColors.accent,
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: AppColors.surface,
-      contentTextStyle: const TextStyle(fontFamily: kFontFamily, color: AppColors.textPrimary, fontSize: 13),
+      elevation: 0,
+      insetPadding: const EdgeInsets.fromLTRB(AppSpace.gutter, 0, AppSpace.gutter, AppSpace.md),
+      contentTextStyle: AppText.body.copyWith(fontSize: 14, color: AppColors.textPrimary),
+      actionTextColor: AppColors.accent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
         side: const BorderSide(color: AppColors.borderStrong),
@@ -85,11 +152,26 @@ ThemeData buildAppTheme() {
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.panel,
       surfaceTintColor: Colors.transparent,
-      showDragHandle: true,
-      dragHandleColor: AppColors.borderStrong,
+      showDragHandle: false,
     ),
   );
 }
+
+/// Cupertino styling for the large-title navigation bars, action sheets and alerts.
+const CupertinoThemeData kCupertinoTheme = CupertinoThemeData(
+  brightness: Brightness.dark,
+  primaryColor: AppColors.accent,
+  scaffoldBackgroundColor: AppColors.background,
+  barBackgroundColor: Color(0xCC0D0E11),
+  textTheme: CupertinoTextThemeData(
+    primaryColor: AppColors.accent,
+    textStyle: AppText.body,
+    actionTextStyle: TextStyle(fontFamily: kFontFamily, fontSize: 17, color: AppColors.accent),
+    navTitleTextStyle: AppText.headline,
+    navLargeTitleTextStyle: AppText.largeTitle,
+    navActionTextStyle: TextStyle(fontFamily: kFontFamily, fontSize: 17, color: AppColors.accent),
+  ),
+);
 
 const SystemUiOverlayStyle kSystemUiStyle = SystemUiOverlayStyle(
   statusBarColor: Colors.transparent,

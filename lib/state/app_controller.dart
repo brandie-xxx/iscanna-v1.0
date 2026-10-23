@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -8,22 +10,20 @@ import '../services/pin_parser.dart';
 
 enum AppTab { scanner, batch }
 
-/// All app state and actions (the Flutter port of the web App component).
+/// All app state and actions.
 class AppController extends ChangeNotifier {
-  AppController(this._ocr, {this.sampleDelay = const Duration(milliseconds: 350)});
+  AppController(this._ocr);
 
   final OcrService _ocr;
-  final Duration sampleDelay;
 
   CarrierFormat _format = defaultFormat;
   AppTab _tab = AppTab.scanner;
   int _targetScanCount = 1;
   ScannedCard? _card;
   String? _scanError;
-  CardSource? _preview;
+  String? _previewPath;
   final List<ScannedCard> _batch = [];
   bool _isScanning = false;
-  String? _activeSampleId;
 
   // Only the latest scan may update state; older in-flight results are dropped.
   int _scanSeq = 0;
@@ -33,10 +33,11 @@ class AppController extends ChangeNotifier {
   int get targetScanCount => _targetScanCount;
   ScannedCard? get card => _card;
   String? get scanError => _scanError;
-  CardSource? get preview => _preview;
+
+  /// The photo shown in the viewfinder when the camera is off.
+  String? get previewPath => _previewPath;
   List<ScannedCard> get batch => List.unmodifiable(_batch);
   bool get isScanning => _isScanning;
-  String? get activeSampleId => _activeSampleId;
 
   void selectTab(AppTab tab) {
     if (_tab == tab) return;
@@ -45,6 +46,7 @@ class AppController extends ChangeNotifier {
   }
 
   void selectFormat(CarrierFormat format) {
+    if (_format.id == format.id) return;
     _format = format;
     final card = _card;
     if (card != null) _replaceCard(switchCarrier(card, format));
@@ -52,59 +54,40 @@ class AppController extends ChangeNotifier {
   }
 
   void incrementTarget() {
+    if (_targetScanCount >= 99) return;
     _targetScanCount++;
     notifyListeners();
   }
 
-  void resetTarget() {
-    if (_targetScanCount == 1) return;
-    _targetScanCount = 1;
+  void decrementTarget() {
+    if (_targetScanCount <= 1) return;
+    _targetScanCount--;
     notifyListeners();
   }
 
   /// Camera opened: clear the preview so the live feed shows, but keep the last result.
   void clearPreview() {
-    _preview = null;
-    _activeSampleId = null;
+    _previewPath = null;
     notifyListeners();
   }
 
-  Future<void> scanSample(SampleScenario sample) => _scan(SampleSource(sample));
-
-  Future<void> scanPhoto(String path) => _scan(PhotoSource(path));
-
-  Future<void> rescan() async {
-    final source = _preview;
-    if (source != null) await _scan(source);
-  }
-
-  Future<void> _scan(CardSource source) async {
+  Future<void> scanPhoto(String path) async {
     final seq = ++_scanSeq;
     _isScanning = true;
     _scanError = null;
-    _preview = source;
-    _activeSampleId = source is SampleSource ? source.scenario.id : null;
+    _previewPath = path;
     notifyListeners();
 
     try {
-      final ScannedCard card;
-      switch (source) {
-        case SampleSource(:final scenario):
-          await Future<void>.delayed(sampleDelay);
-          if (seq != _scanSeq) return;
-          card = _sampleCard(scenario, source);
-        case PhotoSource(:final path):
-          final result = await _ocr.readImage(path);
-          if (seq != _scanSeq) return;
-          card = parsePinText(result.text, fallbackFormat: _format, confidence: result.confidence, source: source);
-      }
-      _showCard(card);
+      final result = await _ocr.readImage(path);
+      if (seq != _scanSeq) return;
+      _showCard(parsePinText(result.text, fallbackFormat: _format, confidence: result.confidence, photoPath: path));
     } catch (e) {
       if (seq != _scanSeq) return;
       debugPrint('OCR failed: $e');
       _card = null;
       _scanError = 'Could not read this photo. Try again with the card flat and well lit.';
-      await HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
     } finally {
       if (seq == _scanSeq) {
         _isScanning = false;
@@ -113,8 +96,11 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  ScannedCard _sampleCard(SampleScenario sample, CardSource source) =>
-      parsePinText(sample.expectedPin, fallbackFormat: _format, confidence: sample.confidence, source: source);
+  /// Reads the current preview photo again.
+  Future<void> rescan() async {
+    final path = _previewPath;
+    if (path != null) await scanPhoto(path);
+  }
 
   void _showCard(ScannedCard card) {
     _scanError = null;
@@ -126,13 +112,6 @@ class AppController extends ChangeNotifier {
     }
     // Only verified reads are queued automatically; others need review first.
     if (_targetScanCount > 1 && card.canDial) _addToBatch(card);
-  }
-
-  /// Opens a batch card in the result view (e.g. before editing it).
-  void focusCard(ScannedCard card) {
-    _card = card;
-    _scanError = null;
-    notifyListeners();
   }
 
   void saveCorrection(ScannedCard card, String newPin) {
@@ -162,7 +141,7 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Keep the result view and its batch copy in sync.
+  // Keep the result view and the batch copy of a card in sync.
   void _replaceCard(ScannedCard updated) {
     if (_card?.id == updated.id) _card = updated;
     final i = _batch.indexWhere((c) => c.id == updated.id);

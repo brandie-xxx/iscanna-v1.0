@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -36,6 +37,8 @@ class _IscannaAppState extends State<IscannaApp> {
       title: 'iscanna1.0',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      // Large-title nav bars, action sheets and alerts pick up the app's colours and fonts.
+      builder: (context, child) => CupertinoTheme(data: kCupertinoTheme, child: child!),
       home: HomeScreen(controller: widget.controller),
     );
   }

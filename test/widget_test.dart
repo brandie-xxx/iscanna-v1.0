@@ -1,97 +1,141 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iscanna/data/carriers.dart';
 import 'package:iscanna/main.dart';
 import 'package:iscanna/services/ocr_service.dart';
 import 'package:iscanna/state/app_controller.dart';
 
-class _NoOcr implements OcrService {
-  _NoOcr([this.text = '']);
-  final String text;
+/// Returns canned OCR text per photo path.
+class _FakeOcr implements OcrService {
+  static const texts = {
+    '/econet.jpg': '3630 1466 8211 3274',
+    '/netone.jpg': '4022 6224 0582 1561',
+    '/partial.jpg': '4022 6224 05',
+  };
 
   @override
-  Future<OcrResult> readImage(String path) async => OcrResult(text, null);
+  Future<OcrResult> readImage(String path) async => OcrResult(texts[path] ?? '', null);
 
   @override
   Future<void> dispose() async {}
 }
 
+Future<AppController> _pumpApp(WidgetTester tester, {Size size = const Size(390, 844), double text = 1}) async {
+  tester.view.physicalSize = size * 3;
+  tester.view.devicePixelRatio = 3;
+  tester.platformDispatcher.textScaleFactorTestValue = text;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  final app = AppController(_FakeOcr());
+  await tester.pumpWidget(IscannaApp(controller: app));
+  await tester.pumpAndSettle();
+  return app;
+}
+
+Future<void> _scan(WidgetTester tester, AppController app, String path) async {
+  unawaited(app.scanPhoto(path));
+  await tester.pumpAndSettle();
+}
+
+/// Scrolls the current tab until [finder] is built and on screen (lists build lazily).
+Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
+  final page = find.descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable)).first;
+  await tester.scrollUntilVisible(finder, 200, scrollable: page);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
+  await _scrollTo(tester, finder);
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
 void main() {
-  testWidgets('sample scan, edit cancel, batch flow', (tester) async {
-    tester.view.physicalSize = const Size(1170, 2532);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+  testWidgets('scan, review, edit and queue a card', (tester) async {
+    final app = await _pumpApp(tester);
 
-    final app = AppController(_NoOcr('4022 6224 05'), sampleDelay: Duration.zero);
-    await tester.pumpWidget(IscannaApp(controller: app));
-    expect(find.text('Awaiting Voucher Card'), findsOneWidget);
+    // Header brand only; no sample presets, no footer wordmark; author link present.
+    expect(find.text('iscanna1.0'), findsOneWidget);
+    expect(find.textContaining('sample', findRichText: true), findsNothing);
+    expect(find.text('No Card Yet'), findsOneWidget);
+    await _scrollTo(tester, find.text('*exxstatix'));
+    expect(find.text('*exxstatix'), findsOneWidget);
 
-    // One tap on a preset = one scan.
-    await tester.tap(find.text('Econet card'));
-    await tester.pumpAndSettle();
+    await _scan(tester, app, '/econet.jpg');
+    await _scrollTo(tester, find.text('Verified'));
     expect(find.text('*121*3630146682113274#'), findsOneWidget);
-    expect(find.text('Verified'), findsOneWidget);
 
-    // A partial camera read needs review and can't be dialed.
-    unawaited(app.scanPhoto('/partial.jpg'));
-    await tester.pumpAndSettle();
-    expect(find.text('Review Needed'), findsOneWidget);
-    expect(find.text('Fix PIN to Dial'), findsOneWidget);
+    // A partial read needs review and can't be dialed.
+    await _scan(tester, app, '/partial.jpg');
+    await _scrollTo(tester, find.text('Fix PIN to Dial'));
+    expect(find.text('Needs Review'), findsOneWidget);
 
     // Editor opens on the first unread digit; Cancel discards edits.
-    await tester.ensureVisible(find.text('Edit'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
-    expect(find.text('Digit 11 of 16'), findsOneWidget);
+    await _tapVisible(tester, find.text('Edit'));
+    expect(find.text('DIGIT 11 / 16'), findsOneWidget);
     await tester.tap(find.descendant(of: find.byType(GridView), matching: find.text('9')));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(app.card?.rawPin, '4022622405000000');
 
-    // Fill in the six missing digits: 821561.
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    // Fill in the six missing digits and save.
+    await _tapVisible(tester, find.text('Edit'));
     for (final d in '821561'.split('')) {
       await tester.tap(find.descendant(of: find.byType(GridView), matching: find.text(d)));
     }
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(find.text('Verified'), findsOneWidget);
-    expect(find.text('Dial NetOne Code'), findsOneWidget);
+    expect(find.text('Dial NetOne'), findsOneWidget);
 
-    // Queue it and view the batch tab.
-    await tester.ensureVisible(find.text('Add to Batch'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Add to Batch'));
-    await tester.pump();
-    await tester.scrollUntilVisible(find.text('Batch'), -300);
+    // Queue it, then open the Batch tab from the tab bar.
+    await _tapVisible(tester, find.text('Add to Batch'));
     await tester.tap(find.text('Batch'));
     await tester.pumpAndSettle();
     expect(find.text('*133*4022622405821561#'), findsOneWidget);
     expect(find.text('Export CSV'), findsOneWidget);
 
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    // Row tap opens the action sheet; remove the card.
+    await tester.tap(find.text('*133*4022622405821561#'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit PIN'), findsOneWidget);
+    await tester.tap(find.text('Remove from Batch'));
+    await tester.pumpAndSettle();
+    expect(find.text('No Cards Yet'), findsOneWidget);
+
+    await tester.pumpAndSettle(const Duration(seconds: 4));
+  });
+
+  testWidgets('clearing the batch asks for confirmation', (tester) async {
+    final app = await _pumpApp(tester);
+    for (final path in ['/econet.jpg', '/netone.jpg']) {
+      await _scan(tester, app, path);
+      app.addToBatch(app.card!);
+    }
+    app.selectTab(AppTab.batch);
+    await tester.pumpAndSettle();
+    expect(find.text('2 CARDS'), findsOneWidget);
+
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clear Batch?'), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byType(CupertinoAlertDialog), matching: find.text('Clear')));
+    await tester.pumpAndSettle();
+    expect(app.batch, isEmpty);
+    expect(find.text('No Cards Yet'), findsOneWidget);
   });
 
   testWidgets('no overflow on a small phone with large text', (tester) async {
-    tester.view.physicalSize = const Size(720, 1480);
-    tester.view.devicePixelRatio = 2;
-    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
-    addTearDown(tester.view.reset);
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-
-    final app = AppController(_NoOcr('4022 6224 05'), sampleDelay: Duration.zero);
-    await tester.pumpWidget(IscannaApp(controller: app));
+    final app = await _pumpApp(tester, size: const Size(340, 720), text: 1.3);
     app.incrementTarget();
-    unawaited(app.scanPhoto('/partial.jpg'));
-    await tester.pumpAndSettle();
-    expect(find.text('Review Needed'), findsOneWidget);
+    await _scan(tester, app, '/partial.jpg');
+    await _scrollTo(tester, find.text('Needs Review'));
+    expect(find.text('Fix PIN to Dial'), findsOneWidget);
 
-    unawaited(app.scanSample(kSampleScenarios[1]));
-    await tester.pumpAndSettle();
+    await _scan(tester, app, '/econet.jpg');
     app.selectTab(AppTab.batch);
     await tester.pumpAndSettle();
     expect(find.text('*121*3630146682113274#'), findsOneWidget);
