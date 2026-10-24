@@ -198,19 +198,23 @@ class _CardResultsViewState extends State<CardResultsView> {
                   onPressed: () => _copy(card),
                 ),
               ),
-              // Batch actions only exist once Batch is on (target of 2 or more).
-              if (widget.controller.batchEnabled) ...[
-                const SizedBox(width: AppSpace.md),
-                Expanded(
+              const SizedBox(width: AppSpace.md),
+              // Always shown; greyed out until Batch is on (target of 2 or more), and a tap then says how.
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.controller.batchEnabled
+                      ? null
+                      : () => showToast(context, 'Set Cards to scan to 2 or more to use Batch.'),
                   child: AppButton(
                     label: _added ? 'Added' : 'Add to Batch',
                     icon: _added ? LucideIcons.check : LucideIcons.listPlus,
                     kind: _added ? ButtonKind.tinted : ButtonKind.gray,
                     expand: true,
-                    onPressed: () => _addToBatch(card),
+                    onPressed: widget.controller.batchEnabled ? () => _addToBatch(card) : null,
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ],

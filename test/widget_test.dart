@@ -96,8 +96,11 @@ void main() {
     expect(find.text('Verified'), findsOneWidget);
     expect(find.text('Dial'), findsOneWidget);
 
-    // Batch is off at a target of 1: no Add to Batch, and the tab stays put.
-    expect(find.text('Add to Batch'), findsNothing);
+    // Batch is off at a target of 1: Add to Batch is greyed out and explains itself, and the tab stays put.
+    await _tapVisible(tester, find.text('Add to Batch'));
+    expect(app.batch, isEmpty);
+    expect(find.textContaining('2 or more'), findsWidgets);
+    await tester.pumpAndSettle(const Duration(seconds: 4));
     await tester.tap(find.text('Batch'));
     await tester.pumpAndSettle();
     expect(app.tab, AppTab.scanner);
