@@ -21,7 +21,7 @@ class DigitCorrectionSheet extends StatefulWidget {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: AppColors.panel,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
+      barrierColor: AppColors.scrim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel + 4)),
       ),
@@ -110,7 +110,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
                       ),
                     ),
                   ),
-                  Semantics(header: true, child: const Text('Edit PIN', style: AppText.headline)),
+                  Semantics(header: true, child: Text('Edit PIN', style: AppText.headline)),
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerRight,
@@ -214,10 +214,10 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
             style: TextStyle(
               fontFamily: kDisplayFamily,
               fontWeight: FontWeight.w700,
-              fontFeatures: [FontFeature.tabularFigures()],
+              fontFeatures: const [FontFeature.tabularFigures()],
               fontSize: 16,
               color: selected
-                  ? AppColors.background
+                  ? AppColors.onAccent
                   : flagged
                   ? AppColors.warning
                   : AppColors.textPrimary,

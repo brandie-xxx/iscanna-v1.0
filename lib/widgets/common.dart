@@ -17,11 +17,11 @@ class BrandMark extends StatelessWidget {
       header: true,
       label: 'iscanna 1.0',
       excludeSemantics: true,
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(LucideIcons.scanLine, size: 18, color: AppColors.accent),
-          SizedBox(width: 7),
+          const SizedBox(width: 7),
           Text.rich(
             TextSpan(
               children: [
@@ -35,7 +35,12 @@ class BrandMark extends StatelessWidget {
                 ),
               ],
             ),
-            style: TextStyle(fontFamily: kFontFamily, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: -0.4),
+            style: const TextStyle(
+              fontFamily: kFontFamily,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
+            ),
           ),
         ],
       ),
@@ -104,7 +109,7 @@ class Hairline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(left: indent),
-      child: const SizedBox(
+      child: SizedBox(
         height: 0.5,
         width: double.infinity,
         child: ColoredBox(color: AppColors.borderStrong),
@@ -201,7 +206,7 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final tint = destructive ? AppColors.danger : AppColors.accent;
     final (bg, fg) = switch (kind) {
-      ButtonKind.filled => (tint, AppColors.background),
+      ButtonKind.filled => (tint, AppColors.onAccent),
       ButtonKind.tinted => (tint.withValues(alpha: 0.14), tint),
       ButtonKind.gray => (AppColors.surface, destructive ? AppColors.danger : AppColors.textPrimary),
       ButtonKind.plain => (Colors.transparent, tint),
@@ -267,8 +272,8 @@ class IconCircleButton extends StatelessWidget {
     required this.onPressed,
     this.active = false,
     this.size = kMinTouchTarget,
-    this.color = AppColors.textPrimary,
-    this.background = AppColors.surface,
+    this.color,
+    this.background,
   });
 
   final IconData icon;
@@ -276,8 +281,12 @@ class IconCircleButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool active;
   final double size;
-  final Color color;
-  final Color background;
+
+  /// Icon colour; defaults to the primary text colour.
+  final Color? color;
+
+  /// Fill colour; defaults to the surface colour.
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
@@ -295,13 +304,17 @@ class IconCircleButton extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: onPressed == null ? AppColors.surface : (active ? AppColors.accent : background),
+              color: onPressed == null
+                  ? AppColors.surface
+                  : (active ? AppColors.accent : background ?? AppColors.surface),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
               size: size * 0.42,
-              color: onPressed == null ? AppColors.textFaint : (active ? AppColors.background : color),
+              color: onPressed == null
+                  ? AppColors.textFaint
+                  : (active ? AppColors.onAccent : color ?? AppColors.textPrimary),
             ),
           ),
         ),
@@ -371,7 +384,7 @@ class Capsule extends StatelessWidget {
       child: Text(
         text,
         maxLines: 1,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: kFontFamily,
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -394,12 +407,14 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final light = AppColors.brightness == Brightness.light;
     return SizedBox(
       width: double.infinity,
       child: CupertinoSlidingSegmentedControl<T>(
         groupValue: value,
-        backgroundColor: AppColors.inset,
-        thumbColor: AppColors.surfaceHover,
+        // Light mode follows iOS: a white thumb on a grey track.
+        backgroundColor: light ? AppColors.surface : AppColors.inset,
+        thumbColor: light ? AppColors.panel : AppColors.surfaceHover,
         padding: const EdgeInsets.all(3),
         onValueChanged: (v) {
           if (v == null || v == value) return;
@@ -431,7 +446,7 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: kDisplayFamily,
                           fontWeight: FontWeight.w700,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                          fontFeatures: const [FontFeature.tabularFigures()],
                           fontSize: 10.5,
                           color: key == value ? AppColors.accent : AppColors.textFaint,
                         ),
@@ -447,20 +462,22 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
   }
 }
 
-/// Footer credit linking to the author's X profile.
+/// Footer credit linking to the author's X profile: small, muted and centred at the end of a page,
+/// with clear space above it so it never crowds the content or the tab bar.
 class AuthorFooter extends StatelessWidget {
-  const AuthorFooter({super.key});
+  const AuthorFooter({super.key, this.top = AppSpace.xxxl});
+
+  /// Space above the credit.
+  final double top;
 
   static final Uri profile = Uri.parse('https://x.com/exxstatix');
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // Right inset xs + the link's own lg padding lines the text up with the page gutter.
-      padding: const EdgeInsets.only(top: AppSpace.xxxl, bottom: AppSpace.lg, right: AppSpace.xs),
+      padding: EdgeInsets.only(top: top, bottom: AppSpace.md),
       // heightFactor 1: hug the link vertically instead of filling the space it's given.
-      child: Align(
-        alignment: Alignment.centerRight,
+      child: Center(
         heightFactor: 1,
         child: Semantics(
           link: true,
@@ -474,8 +491,8 @@ class AuthorFooter extends StatelessWidget {
               } catch (_) {}
               if (!ok && context.mounted) showToast(context, "Couldn't open x.com/exxstatix");
             },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpace.lg, vertical: AppSpace.md),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg, vertical: AppSpace.md),
               // Deliberately quiet: a small, muted credit rather than a call to action.
               child: Text(
                 '*exxstatix',

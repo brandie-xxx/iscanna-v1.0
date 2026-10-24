@@ -191,7 +191,7 @@ class _BatchTabState extends State<BatchTab> {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
                   minimumSize: const Size(kMinTouchTarget, kMinTouchTarget),
                   onPressed: _confirmClear,
-                  child: const Text(
+                  child: Text(
                     'Clear',
                     style: TextStyle(
                       fontFamily: kButtonFamily,
@@ -237,8 +237,8 @@ class _BatchTabState extends State<BatchTab> {
                 ),
                 const SizedBox(height: AppSpace.section),
                 // Export sits directly on the page: no card, just the format row and actions.
-                const Padding(
-                  padding: EdgeInsets.only(left: AppSpace.lg, bottom: AppSpace.md),
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpace.lg, bottom: AppSpace.md),
                   child: Text('Export', style: AppText.sectionHeader),
                 ),
                 _FormatRow(value: _format, onChanged: (f) => setState(() => _format = f)),
@@ -275,8 +275,8 @@ class _BatchTabState extends State<BatchTab> {
                     ),
                   ],
                 ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, 0),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, 0),
                   child: Text(
                     'Export opens the share sheet so you can save or send the file.',
                     style: AppText.footnote,
@@ -292,7 +292,7 @@ class _BatchTabState extends State<BatchTab> {
           child: Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + AppSpace.lg),
               child: const AuthorFooter(),
             ),
           ),
@@ -365,7 +365,7 @@ class _BatchRow extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: kDisplayFamily,
                         fontWeight: FontWeight.w700,
-                        fontFeatures: [FontFeature.tabularFigures()],
+                        fontFeatures: const [FontFeature.tabularFigures()],
                         fontSize: 10.5,
                         color: card.canDial ? AppColors.accent : AppColors.warning,
                       ),
@@ -385,10 +385,10 @@ class _BatchRow extends StatelessWidget {
                             child: Text(
                               card.wrappedPin,
                               maxLines: 1,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: kDisplayFamily,
                                 fontWeight: FontWeight.w700,
-                                fontFeatures: [FontFeature.tabularFigures()],
+                                fontFeatures: const [FontFeature.tabularFigures()],
                                 fontSize: 15,
                                 color: AppColors.textPrimary,
                                 letterSpacing: 0.4,
@@ -403,7 +403,7 @@ class _BatchRow extends StatelessWidget {
                               TextSpan(text: card.carrierName),
                               if (!card.canDial) ...[
                                 const TextSpan(text: '  ·  '),
-                                const TextSpan(
+                                TextSpan(
                                   text: 'Review',
                                   style: TextStyle(color: AppColors.warning),
                                 ),
@@ -438,10 +438,10 @@ class _EmptyBatch extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppSpace.xxxl * 2),
       child: Column(
         children: [
-          const Text('No Cards Yet', style: AppText.headline),
+          Text('No Cards Yet', style: AppText.headline),
           const SizedBox(height: 6),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpace.xxl),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.xxl),
             child: Text(
               'Verified scans join the batch automatically, ready to dial, copy or export.',
               textAlign: TextAlign.center,
@@ -471,7 +471,7 @@ class _FormatRow extends StatelessWidget {
       child: Row(
         children: [
           for (var i = 0; i < formats.length; i++) ...[
-            if (i > 0) const SizedBox(width: 1, height: 18, child: ColoredBox(color: AppColors.borderStrong)),
+            if (i > 0) SizedBox(width: 1, height: 18, child: ColoredBox(color: AppColors.borderStrong)),
             Expanded(
               child: Semantics(
                 inMutuallyExclusiveGroup: true,

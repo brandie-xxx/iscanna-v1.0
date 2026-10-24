@@ -2,26 +2,135 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Colour tokens: dark grey surfaces with a baby-blue accent.
+/// One set of colour tokens. [AppColors] reads from the active palette.
+class AppPalette {
+  const AppPalette({
+    required this.brightness,
+    required this.background,
+    required this.panel,
+    required this.surface,
+    required this.surfaceHover,
+    required this.inset,
+    required this.border,
+    required this.divider,
+    required this.borderStrong,
+    required this.accent,
+    required this.accentPressed,
+    required this.accentSoft,
+    required this.onAccent,
+    required this.warning,
+    required this.danger,
+    required this.textPrimary,
+    required this.textBody,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.textFaint,
+    required this.scrim,
+  });
+
+  final Brightness brightness;
+  final Color background;
+  final Color panel;
+  final Color surface;
+  final Color surfaceHover;
+  final Color inset;
+  final Color border;
+  final Color divider;
+  final Color borderStrong;
+  final Color accent;
+  final Color accentPressed;
+  final Color accentSoft;
+
+  /// Text and icons on a filled accent background.
+  final Color onAccent;
+  final Color warning;
+  final Color danger;
+  final Color textPrimary;
+  final Color textBody;
+  final Color textSecondary;
+  final Color textMuted;
+  final Color textFaint;
+
+  /// Modal barrier behind sheets.
+  final Color scrim;
+
+  /// Dark grey surfaces with a sky-blue accent.
+  static const dark = AppPalette(
+    brightness: Brightness.dark,
+    background: Color(0xFF0D0E11),
+    panel: Color(0xFF16171C),
+    surface: Color(0xFF1F2027),
+    surfaceHover: Color(0xFF292A33),
+    inset: Color(0xFF111216),
+    border: Color(0xFF24252E),
+    divider: Color(0xFF22232B),
+    borderStrong: Color(0xFF353644),
+    accent: Color(0xFF38BDF8),
+    accentPressed: Color(0xFF0EA5E9),
+    accentSoft: Color(0xFF7DD3FC),
+    onAccent: Color(0xFF0D0E11),
+    warning: Color(0xFFFBBF24),
+    danger: Color(0xFFF87171),
+    textPrimary: Color(0xFFF4F4F5),
+    textBody: Color(0xFFE4E4E7),
+    textSecondary: Color(0xFFA1A1AA),
+    textMuted: Color(0xFF71717A),
+    textFaint: Color(0xFF52525B),
+    scrim: Color(0x99000000),
+  );
+
+  /// iOS-style grouped light: soft grey page, white panels, a deeper blue for contrast on white.
+  static const light = AppPalette(
+    brightness: Brightness.light,
+    background: Color(0xFFF2F3F7),
+    panel: Color(0xFFFFFFFF),
+    surface: Color(0xFFEBECF0),
+    surfaceHover: Color(0xFFDEDFE5),
+    inset: Color(0xFFF5F6F9),
+    border: Color(0xFFE3E4E9),
+    divider: Color(0xFFE6E7EB),
+    borderStrong: Color(0xFFCDCED6),
+    accent: Color(0xFF0284C7),
+    accentPressed: Color(0xFF0369A1),
+    accentSoft: Color(0xFF38BDF8),
+    onAccent: Color(0xFFFFFFFF),
+    warning: Color(0xFFB45309),
+    danger: Color(0xFFDC2626),
+    textPrimary: Color(0xFF0B0C0F),
+    textBody: Color(0xFF1C1D22),
+    textSecondary: Color(0xFF52525B),
+    textMuted: Color(0xFF6B6B74),
+    textFaint: Color(0xFF9D9DA6),
+    scrim: Color(0x66000000),
+  );
+}
+
+/// Colour tokens for the active palette (follows the phone's light/dark setting).
 abstract final class AppColors {
-  static const background = Color(0xFF0D0E11);
-  static const panel = Color(0xFF16171C);
-  static const surface = Color(0xFF1F2027);
-  static const surfaceHover = Color(0xFF292A33);
-  static const inset = Color(0xFF111216);
-  static const border = Color(0xFF24252E);
-  static const divider = Color(0xFF22232B);
-  static const borderStrong = Color(0xFF353644);
-  static const accent = Color(0xFF7DD3FC);
-  static const accentPressed = Color(0xFF38BDF8);
-  static const accentSoft = Color(0xFFBAE6FD);
-  static const warning = Color(0xFFFBBF24);
-  static const danger = Color(0xFFF87171);
-  static const textPrimary = Color(0xFFF4F4F5);
-  static const textBody = Color(0xFFE4E4E7);
-  static const textSecondary = Color(0xFFA1A1AA);
-  static const textMuted = Color(0xFF71717A);
-  static const textFaint = Color(0xFF52525B);
+  /// The active palette; set from the phone's brightness at start-up and whenever it changes.
+  static AppPalette palette = AppPalette.dark;
+
+  static Brightness get brightness => palette.brightness;
+  static Color get background => palette.background;
+  static Color get panel => palette.panel;
+  static Color get surface => palette.surface;
+  static Color get surfaceHover => palette.surfaceHover;
+  static Color get inset => palette.inset;
+  static Color get border => palette.border;
+  static Color get divider => palette.divider;
+  static Color get borderStrong => palette.borderStrong;
+  static Color get accent => palette.accent;
+  static Color get accentPressed => palette.accentPressed;
+  static Color get accentSoft => palette.accentSoft;
+  static Color get onAccent => palette.onAccent;
+  static Color get warning => palette.warning;
+  static Color get danger => palette.danger;
+  static Color get textPrimary => palette.textPrimary;
+  static Color get textBody => palette.textBody;
+  static Color get textSecondary => palette.textSecondary;
+  static Color get textMuted => palette.textMuted;
+  static Color get textFaint => palette.textFaint;
+  static Color get scrim => palette.scrim;
 }
 
 abstract final class AppRadius {
@@ -63,21 +172,21 @@ const String kDisplayFamily = 'Chivo';
 /// Casing is always standard (sentence/title case): never force uppercase.
 abstract final class AppText {
   /// Screen title (centred, collapses into the navigation bar).
-  static const largeTitle = TextStyle(
+  static TextStyle get largeTitle => TextStyle(
     fontFamily: kFontFamily,
     fontSize: 19,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.6,
     color: AppColors.textPrimary,
   );
-  static const headline = TextStyle(
+  static TextStyle get headline => TextStyle(
     fontFamily: kFontFamily,
     fontSize: 15,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.3,
     color: AppColors.textPrimary,
   );
-  static const body = TextStyle(
+  static TextStyle get body => TextStyle(
     fontFamily: kFontFamily,
     fontSize: 14.5,
     fontWeight: FontWeight.w500,
@@ -85,7 +194,7 @@ abstract final class AppText {
     letterSpacing: -0.2,
     color: AppColors.textBody,
   );
-  static const callout = TextStyle(
+  static TextStyle get callout => TextStyle(
     fontFamily: kFontFamily,
     fontSize: 13.5,
     fontWeight: FontWeight.w400,
@@ -93,14 +202,14 @@ abstract final class AppText {
     letterSpacing: -0.1,
     color: AppColors.textSecondary,
   );
-  static const footnote = TextStyle(
+  static TextStyle get footnote => TextStyle(
     fontFamily: kFontFamily,
     fontSize: 12.5,
     fontWeight: FontWeight.w400,
     height: 1.4,
     color: AppColors.textMuted,
   );
-  static const caption = TextStyle(
+  static TextStyle get caption => TextStyle(
     fontFamily: kFontFamily,
     fontSize: 11.5,
     fontWeight: FontWeight.w400,
@@ -109,7 +218,7 @@ abstract final class AppText {
   );
 
   /// Grouped-section header, in standard casing.
-  static const sectionHeader = TextStyle(
+  static TextStyle get sectionHeader => TextStyle(
     fontFamily: kFontFamily,
     fontSize: 12.5,
     fontWeight: FontWeight.w600,
@@ -118,12 +227,8 @@ abstract final class AppText {
   );
 
   /// Small accent label for HUD hints and counters.
-  static const readout = TextStyle(
-    fontFamily: kFontFamily,
-    fontSize: 11.5,
-    fontWeight: FontWeight.w600,
-    color: AppColors.accent,
-  );
+  static TextStyle get readout =>
+      TextStyle(fontFamily: kFontFamily, fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.accent);
 
   /// Codes and PINs: heavy Chivo with tabular figures so digits line up.
   static const code = TextStyle(
@@ -141,20 +246,22 @@ abstract final class AppText {
 }
 
 ThemeData buildAppTheme() {
+  final dark = AppColors.brightness == Brightness.dark;
+  final scheme = (dark ? const ColorScheme.dark() : const ColorScheme.light()).copyWith(
+    surface: AppColors.panel,
+    primary: AppColors.accent,
+    onPrimary: AppColors.onAccent,
+    secondary: AppColors.accent,
+    error: AppColors.danger,
+    onSurface: AppColors.textBody,
+    outline: AppColors.border,
+  );
   final base = ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: AppColors.brightness,
     fontFamily: kFontFamily,
     scaffoldBackgroundColor: AppColors.background,
-    colorScheme: const ColorScheme.dark(
-      surface: AppColors.panel,
-      primary: AppColors.accent,
-      onPrimary: AppColors.background,
-      secondary: AppColors.accent,
-      error: AppColors.danger,
-      onSurface: AppColors.textBody,
-      outline: AppColors.border,
-    ),
+    colorScheme: scheme,
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
     // iOS-style page transitions and overscroll everywhere.
@@ -174,17 +281,17 @@ ThemeData buildAppTheme() {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: AppColors.surface,
+      backgroundColor: dark ? AppColors.surface : AppColors.textPrimary,
       elevation: 0,
       insetPadding: const EdgeInsets.fromLTRB(AppSpace.gutter, 0, AppSpace.gutter, AppSpace.md),
-      contentTextStyle: AppText.body.copyWith(fontSize: 13.5, color: AppColors.textPrimary),
-      actionTextColor: AppColors.accent,
+      contentTextStyle: AppText.body.copyWith(fontSize: 13.5, color: dark ? AppColors.textPrimary : AppColors.panel),
+      actionTextColor: dark ? AppColors.accent : AppColors.accentSoft,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
-        side: const BorderSide(color: AppColors.borderStrong),
+        side: dark ? BorderSide(color: AppColors.borderStrong) : BorderSide.none,
       ),
     ),
-    bottomSheetTheme: const BottomSheetThemeData(
+    bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: AppColors.panel,
       surfaceTintColor: Colors.transparent,
       showDragHandle: false,
@@ -192,12 +299,12 @@ ThemeData buildAppTheme() {
   );
 }
 
-/// Cupertino styling for the large-title navigation bars, action sheets and alerts.
-const CupertinoThemeData kCupertinoTheme = CupertinoThemeData(
-  brightness: Brightness.dark,
+/// Cupertino styling for action sheets and alerts.
+CupertinoThemeData buildCupertinoTheme() => CupertinoThemeData(
+  brightness: AppColors.brightness,
   primaryColor: AppColors.accent,
   scaffoldBackgroundColor: AppColors.background,
-  barBackgroundColor: Color(0xCC0D0E11),
+  barBackgroundColor: AppColors.background.withValues(alpha: 0.8),
   textTheme: CupertinoTextThemeData(
     primaryColor: AppColors.accent,
     textStyle: AppText.body,
@@ -208,10 +315,14 @@ const CupertinoThemeData kCupertinoTheme = CupertinoThemeData(
   ),
 );
 
-const SystemUiOverlayStyle kSystemUiStyle = SystemUiOverlayStyle(
-  statusBarColor: Colors.transparent,
-  statusBarIconBrightness: Brightness.light,
-  statusBarBrightness: Brightness.dark,
-  systemNavigationBarColor: AppColors.background,
-  systemNavigationBarIconBrightness: Brightness.light,
-);
+/// Status and navigation bar styling to match the active palette.
+SystemUiOverlayStyle systemUiStyle() {
+  final dark = AppColors.brightness == Brightness.dark;
+  return SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+    statusBarBrightness: AppColors.brightness,
+    systemNavigationBarColor: AppColors.background,
+    systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+  );
+}

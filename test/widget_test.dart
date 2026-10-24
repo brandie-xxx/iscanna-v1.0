@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iscanna/main.dart';
 import 'package:iscanna/services/ocr_service.dart';
 import 'package:iscanna/state/app_controller.dart';
+import 'package:iscanna/theme/app_theme.dart';
 
 /// Returns canned OCR text per photo path.
 class _FakeOcr implements OcrService {
@@ -207,5 +209,21 @@ void main() {
     await tester.tap(find.bySemanticsLabel('About iscanna'));
     await tester.pumpAndSettle();
     expectNoShouting();
+  });
+
+  testWidgets('follows the phone between light and dark without losing state', (tester) async {
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    final app = await _pumpApp(tester);
+    expect(AppColors.palette, AppPalette.light);
+    expect(Theme.of(tester.element(find.byType(Scaffold))).scaffoldBackgroundColor, AppPalette.light.background);
+
+    app.incrementTarget();
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    await tester.pumpAndSettle();
+    expect(AppColors.palette, AppPalette.dark);
+    expect(Theme.of(tester.element(find.byType(Scaffold))).scaffoldBackgroundColor, AppPalette.dark.background);
+    expect(find.text('2'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('Cards to scan')).style?.color, AppPalette.dark.textBody);
   });
 }

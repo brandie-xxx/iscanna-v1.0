@@ -15,3 +15,8 @@
 
 ## Credit
 - The `*exxstatix` credit links to https://x.com/exxstatix and stays subtle (small, muted).
+
+## Colours (iscanna)
+- The app follows the phone's light/dark setting. Take colours from `AppColors` (backed by
+  `AppPalette.light` / `AppPalette.dark`); never hard-code them, and use `onAccent` for content on
+  a filled accent background.

@@ -149,9 +149,9 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
       headerTrailing: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         child: app.isScanning
-            ? const Text('Reading…', key: ValueKey('reading'), style: AppText.readout)
+            ? Text('Reading…', key: const ValueKey('reading'), style: AppText.readout)
             : live
-            ? const Text('● LIVE', key: ValueKey('live'), style: AppText.readout)
+            ? Text('● LIVE', key: const ValueKey('live'), style: AppText.readout)
             : const SizedBox.shrink(),
       ),
       padding: const EdgeInsets.all(AppSpace.md),
@@ -327,7 +327,7 @@ class _ShutterButton extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.45), blurRadius: 18)],
             ),
-            child: const Icon(LucideIcons.scanLine, color: AppColors.background, size: 24),
+            child: Icon(LucideIcons.scanLine, color: AppColors.onAccent, size: 24),
           ),
         ),
       ),
@@ -364,7 +364,7 @@ class _PhotoPreview extends StatelessWidget {
       File(path),
       fit: BoxFit.cover,
       semanticLabel: 'Voucher card photo',
-      errorBuilder: (_, _, _) => const Center(child: Icon(LucideIcons.imageOff, color: AppColors.textFaint, size: 28)),
+      errorBuilder: (_, _, _) => Center(child: Icon(LucideIcons.imageOff, color: AppColors.textFaint, size: 28)),
     );
   }
 }
@@ -547,7 +547,7 @@ class _EmptyViewfinder extends StatelessWidget {
           right: AppSpace.lg,
           top: AppSpace.md,
           height: (strip.top - 34 - AppSpace.md).clamp(0.0, double.infinity),
-          child: const Align(
+          child: Align(
             alignment: Alignment.bottomCenter,
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -555,7 +555,7 @@ class _EmptyViewfinder extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(LucideIcons.scanLine, size: 26, color: AppColors.accent),
-                  SizedBox(height: AppSpace.sm),
+                  const SizedBox(height: AppSpace.sm),
                   Text(
                     'Scan a recharge card',
                     textAlign: TextAlign.center,
@@ -584,7 +584,7 @@ class _EmptyViewfinder extends StatelessWidget {
           left: AppSpace.lg,
           right: AppSpace.lg,
           top: strip.bottom + AppSpace.lg,
-          child: const FittedBox(
+          child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Text('NetOne or Econet · read on this device', textAlign: TextAlign.center, style: AppText.footnote),
           ),
@@ -612,7 +612,7 @@ class _ErrorBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(LucideIcons.circleAlert, size: 16, color: AppColors.warning),
+            Icon(LucideIcons.circleAlert, size: 16, color: AppColors.warning),
             const SizedBox(width: AppSpace.sm),
             Expanded(
               child: Text(message, style: AppText.footnote.copyWith(color: AppColors.textSecondary)),

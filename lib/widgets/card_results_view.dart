@@ -106,7 +106,7 @@ class _CardResultsViewState extends State<CardResultsView> {
             _Notice(message: card.errorMessage!),
           ],
           const SizedBox(height: AppSpace.xl),
-          const Text('USSD code', style: AppText.sectionHeader),
+          Text('USSD code', style: AppText.sectionHeader),
           const SizedBox(height: AppSpace.md),
           Semantics(
             label: 'USSD code ${card.wrappedPin.split('').join(' ')}',
@@ -123,7 +123,7 @@ class _CardResultsViewState extends State<CardResultsView> {
                   style: TextStyle(
                     fontFamily: kDisplayFamily,
                     fontWeight: FontWeight.w700,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                    fontFeatures: const [FontFeature.tabularFigures()],
                     fontSize: 24,
                     letterSpacing: 1,
                     color: card.canDial ? AppColors.accent : AppColors.textSecondary,
@@ -144,7 +144,7 @@ class _CardResultsViewState extends State<CardResultsView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Voucher PIN', style: AppText.sectionHeader),
+                    Text('Voucher PIN', style: AppText.sectionHeader),
                     const SizedBox(height: 6),
                     SizedBox(
                       width: double.infinity,
@@ -180,7 +180,7 @@ class _CardResultsViewState extends State<CardResultsView> {
           ),
           if (card.canDial && !canDialUssd) ...[
             const SizedBox(height: AppSpace.sm),
-            const Text(
+            Text(
               "iPhone can't open USSD codes from apps, so Dial copies the code for you to paste in Phone.",
               textAlign: TextAlign.center,
               style: AppText.caption,
@@ -235,7 +235,7 @@ class _PinText extends StatelessWidget {
             TextSpan(
               text: d.char,
               style: d.isLowConfidence
-                  ? const TextStyle(
+                  ? TextStyle(
                       color: AppColors.warning,
                       decoration: TextDecoration.underline,
                       decorationColor: AppColors.warning,
@@ -247,10 +247,10 @@ class _PinText extends StatelessWidget {
         ],
       ),
       semanticsLabel: 'PIN ${card.rawPin.split('').join(' ')}',
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: kDisplayFamily,
         fontWeight: FontWeight.w700,
-        fontFeatures: [FontFeature.tabularFigures()],
+        fontFeatures: const [FontFeature.tabularFigures()],
         fontSize: 16,
         color: AppColors.textPrimary,
         letterSpacing: 1,
@@ -277,8 +277,8 @@ class _Notice extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 1),
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
               child: Icon(LucideIcons.triangleAlert, size: 16, color: AppColors.warning),
             ),
             const SizedBox(width: 10),

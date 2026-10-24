@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final app = widget.controller;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: kSystemUiStyle,
+      value: systemUiStyle(),
       child: ListenableBuilder(
         listenable: app,
         builder: (context, _) => Scaffold(
@@ -74,12 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   numberOfParticles: 30,
                   emissionFrequency: 0.6,
                   gravity: 0.25,
-                  colors: const [
-                    AppColors.accent,
-                    AppColors.accentPressed,
-                    AppColors.accentSoft,
-                    AppColors.textPrimary,
-                  ],
+                  colors: [AppColors.accent, AppColors.accentPressed, AppColors.accentSoft, AppColors.textPrimary],
                 ),
               ),
             ],
@@ -124,7 +119,7 @@ class _TabBar extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.background.withValues(alpha: 0.82),
-            border: const Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+            border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
           ),
           child: SafeArea(
             top: false,
@@ -222,11 +217,11 @@ class _TabItem extends StatelessWidget {
                         ),
                         child: Text(
                           badge > 99 ? '99+' : '$badge',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: kButtonFamily,
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.background,
+                            color: AppColors.onAccent,
                           ),
                         ),
                       ),

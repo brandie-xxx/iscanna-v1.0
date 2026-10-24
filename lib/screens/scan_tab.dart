@@ -39,8 +39,8 @@ class ScanTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(AppSpace.gutter, AppSpace.lg, AppSpace.gutter, 0),
           sliver: SliverList.list(
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
                 child: Text('Carrier', style: AppText.sectionHeader),
               ),
               SegmentedPicker<String>(
@@ -63,7 +63,7 @@ class ScanTab extends StatelessWidget {
           child: Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + AppSpace.lg),
               child: const AuthorFooter(),
             ),
           ),
@@ -89,7 +89,7 @@ class _BatchTarget extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(child: Text('Cards to scan', style: AppText.body)),
+              Expanded(child: Text('Cards to scan', style: AppText.body)),
               _RoundStep(
                 icon: LucideIcons.minus,
                 label: 'Decrease cards to scan, now $target',
@@ -144,7 +144,7 @@ class _RoundStep extends StatelessWidget {
             child: Container(
               width: 30,
               height: 30,
-              decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
               child: Icon(icon, size: 15, color: onTap == null ? AppColors.textFaint : AppColors.textPrimary),
             ),
           ),

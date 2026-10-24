@@ -17,7 +17,7 @@ class AboutSheet extends StatelessWidget {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: AppColors.background,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
+      barrierColor: AppColors.scrim,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel + 4)),
       ),
@@ -41,7 +41,7 @@ class AboutSheet extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Semantics(header: true, child: const Text('About', style: AppText.headline)),
+              Semantics(header: true, child: Text('About', style: AppText.headline.copyWith(fontSize: 14))),
               Positioned(
                 right: AppSpace.sm,
                 top: 0,
@@ -62,19 +62,19 @@ class AboutSheet extends StatelessWidget {
               AppSpace.gutter,
               MediaQuery.paddingOf(context).bottom + AppSpace.lg,
             ),
-            children: const [
-              _Hero(),
-              SizedBox(height: AppSpace.xxl),
-              GroupedSection(
+            children: [
+              const _Hero(),
+              const SizedBox(height: AppSpace.xxl),
+              const GroupedSection(
                 header: 'How it works',
                 footer: 'On iPhone, Dial copies the code for you to paste into Phone.',
                 padding: EdgeInsets.symmetric(horizontal: AppSpace.lg, vertical: AppSpace.sm),
                 child: Column(
                   children: [
                     _Step(number: 1, title: 'Scan', text: 'Point the camera at the PIN strip, or choose a photo.'),
-                    Hairline(indent: 48),
+                    Hairline(indent: 40),
                     _Step(number: 2, title: 'Check', text: 'Fix any digit marked for review.'),
-                    Hairline(indent: 48),
+                    Hairline(indent: 40),
                     _Step(
                       number: 3,
                       title: 'Dial',
@@ -83,22 +83,22 @@ class AboutSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: AppSpace.xxl),
+              const SizedBox(height: AppSpace.xxl),
               GroupedSection(
                 header: 'Batch',
                 child: Text(
                   'Set Cards to scan to 2 or more. Verified scans are queued so you can dial, copy or export them.',
-                  style: AppText.callout,
+                  style: AppText.footnote,
                 ),
               ),
-              SizedBox(height: AppSpace.xxl),
+              const SizedBox(height: AppSpace.xxl),
               GroupedSection(
                 header: 'Privacy',
-                child: Text('Cards are read on your phone. Nothing is uploaded.', style: AppText.callout),
+                child: Text('Cards are read on your phone. Nothing is uploaded.', style: AppText.footnote),
               ),
-              SizedBox(height: AppSpace.xxl),
+              const SizedBox(height: AppSpace.xxl),
               Center(child: Text('Version $kAppVersion', style: AppText.caption)),
-              AuthorFooter(),
+              const AuthorFooter(top: 0),
             ],
           ),
         ),
@@ -115,17 +115,17 @@ class _Hero extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 64,
-          height: 64,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.borderStrong, width: 0.5),
           ),
-          child: const Icon(LucideIcons.scanLine, size: 30, color: AppColors.accent),
+          child: Icon(LucideIcons.scanLine, size: 26, color: AppColors.accent),
         ),
         const SizedBox(height: AppSpace.lg),
-        const Text.rich(
+        Text.rich(
           TextSpan(
             children: [
               TextSpan(
@@ -138,10 +138,15 @@ class _Hero extends StatelessWidget {
               ),
             ],
           ),
-          style: TextStyle(fontFamily: kFontFamily, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.6),
+          style: const TextStyle(
+            fontFamily: kFontFamily,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
         ),
         const SizedBox(height: AppSpace.xs),
-        const Text('Scan a recharge card and dial it in one tap.', textAlign: TextAlign.center, style: AppText.callout),
+        Text('Scan a recharge card and dial it in one tap.', textAlign: TextAlign.center, style: AppText.footnote),
       ],
     );
   }
@@ -162,20 +167,20 @@ class _Step extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 28,
+            height: 28,
             alignment: Alignment.center,
             decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), shape: BoxShape.circle),
-            child: Text('$number', style: AppText.code.copyWith(fontSize: 13.5, color: AppColors.accent)),
+            child: Text('$number', style: AppText.code.copyWith(fontSize: 12, color: AppColors.accent)),
           ),
-          const SizedBox(width: AppSpace.lg),
+          const SizedBox(width: AppSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppText.headline.copyWith(fontSize: 14)),
+                Text(title, style: AppText.headline.copyWith(fontSize: 13)),
                 const SizedBox(height: 2),
-                Text(text, style: AppText.footnote),
+                Text(text, style: AppText.footnote.copyWith(fontSize: 12)),
               ],
             ),
           ),
