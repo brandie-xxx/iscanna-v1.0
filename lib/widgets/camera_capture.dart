@@ -573,10 +573,17 @@ class _EmptyViewfinder extends StatelessWidget {
         ),
         Positioned.fromRect(
           rect: strip,
-          child: Center(
-            child: Text(
-              '0000  0000  0000  0000',
-              style: AppText.code.copyWith(fontSize: 16, color: AppColors.textFaint.withValues(alpha: 0.6)),
+          // Inset from the frame so the placeholder never touches the corners, even with large text.
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '0000  0000  0000  0000',
+                  style: AppText.code.copyWith(fontSize: 16, color: AppColors.textFaint.withValues(alpha: 0.6)),
+                ),
+              ),
             ),
           ),
         ),

@@ -22,7 +22,6 @@ class CardResultsView extends StatefulWidget {
 
 class _CardResultsViewState extends State<CardResultsView> {
   bool _copied = false;
-  bool _added = false;
   String? _shownCardId;
 
   @override
@@ -32,7 +31,6 @@ class _CardResultsViewState extends State<CardResultsView> {
     if (card?.id != _shownCardId) {
       _shownCardId = card?.id;
       _copied = false;
-      _added = false;
     }
 
     return AnimatedSwitcher(
@@ -64,16 +62,9 @@ class _CardResultsViewState extends State<CardResultsView> {
     });
   }
 
-  void _addToBatch(ScannedCard card) {
-    widget.controller.addToBatch(card);
-    setState(() => _added = true);
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _added = false);
-    });
-  }
-
   Widget _result(ScannedCard card) {
     final format = findFormatById(card.carrierId);
+    final queued = widget.controller.isQueued(card);
 
     return GroupedSection(
       header: 'Result',
@@ -207,11 +198,12 @@ class _CardResultsViewState extends State<CardResultsView> {
                       ? null
                       : () => showToast(context, 'Set Cards to scan to 2 or more to use Batch.'),
                   child: AppButton(
-                    label: _added ? 'Added' : 'Add to Batch',
-                    icon: _added ? LucideIcons.check : LucideIcons.listPlus,
-                    kind: _added ? ButtonKind.tinted : ButtonKind.gray,
+                    // Reads "Added" while this card is in the batch, whether queued by hand or automatically.
+                    label: queued ? 'Added' : 'Add to Batch',
+                    icon: queued ? LucideIcons.check : LucideIcons.listPlus,
+                    kind: queued ? ButtonKind.tinted : ButtonKind.gray,
                     expand: true,
-                    onPressed: widget.controller.batchEnabled ? () => _addToBatch(card) : null,
+                    onPressed: widget.controller.batchEnabled ? () => widget.controller.addToBatch(card) : null,
                   ),
                 ),
               ),

@@ -231,4 +231,17 @@ void main() {
     expect(find.text('2'), findsOneWidget);
     expect(tester.widget<Text>(find.text('Cards to scan')).style?.color, AppPalette.dark.textBody);
   });
+
+  testWidgets('Add to Batch reads Added once the card is queued', (tester) async {
+    final app = await _pumpApp(tester);
+    app.incrementTarget();
+    await _scan(tester, app, '/econet.jpg'); // verified scans are queued automatically
+    await _scrollTo(tester, find.text('Added'));
+    expect(find.text('Add to Batch'), findsNothing);
+
+    app.removeFromBatch(app.batch.single.id);
+    await tester.pumpAndSettle();
+    expect(find.text('Add to Batch'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 4));
+  });
 }

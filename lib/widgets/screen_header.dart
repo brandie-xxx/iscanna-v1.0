@@ -73,30 +73,21 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                 left: 0,
                 right: 0,
                 height: barHeight,
-                child: Stack(
-                  alignment: Alignment.center,
+                child: CustomMultiChildLayout(
+                  delegate: _BarLayout(),
                   children: [
-                    Opacity(
-                      opacity: Curves.easeIn.transform(t),
-                      child: Semantics(
-                        header: t > 0.5,
-                        child: Text(title, style: AppText.headline.copyWith(fontSize: 14)),
+                    LayoutId(
+                      id: _BarSlot.title,
+                      child: Opacity(
+                        opacity: Curves.easeIn.transform(t),
+                        child: Semantics(
+                          header: t > 0.5,
+                          child: Text(title, maxLines: 1, style: AppText.headline.copyWith(fontSize: 14)),
+                        ),
                       ),
                     ),
-                    if (leading != null)
-                      Positioned(
-                        left: AppSpace.gutter,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(widthFactor: 1, child: leading),
-                      ),
-                    if (trailing != null)
-                      Positioned(
-                        right: AppSpace.sm,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(widthFactor: 1, child: trailing),
-                      ),
+                    if (leading != null) LayoutId(id: _BarSlot.leading, child: leading!),
+                    if (trailing != null) LayoutId(id: _BarSlot.trailing, child: trailing!),
                   ],
                 ),
               ),
@@ -130,4 +121,36 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
       old.trailing != trailing ||
       old.topPadding != topPadding ||
       old.titleHeight != titleHeight;
+}
+
+enum _BarSlot { leading, title, trailing }
+
+/// Leading at the gutter, trailing at the right, title centred on the bar. On a narrow bar where the
+/// centred title would run into either side, the title is hidden (the large title already names the screen).
+class _BarLayout extends MultiChildLayoutDelegate {
+  static const double _gap = AppSpace.sm;
+
+  @override
+  void performLayout(Size size) {
+    final loose = BoxConstraints.loose(size);
+    var left = 0.0;
+    var right = size.width;
+    if (hasChild(_BarSlot.leading)) {
+      final s = layoutChild(_BarSlot.leading, loose);
+      positionChild(_BarSlot.leading, Offset(AppSpace.gutter, (size.height - s.height) / 2));
+      left = AppSpace.gutter + s.width;
+    }
+    if (hasChild(_BarSlot.trailing)) {
+      final s = layoutChild(_BarSlot.trailing, loose);
+      positionChild(_BarSlot.trailing, Offset(size.width - AppSpace.sm - s.width, (size.height - s.height) / 2));
+      right = size.width - AppSpace.sm - s.width;
+    }
+    final title = layoutChild(_BarSlot.title, BoxConstraints(maxWidth: size.width, maxHeight: size.height));
+    final x = (size.width - title.width) / 2;
+    final fits = x >= left + _gap && x + title.width <= right - _gap;
+    positionChild(_BarSlot.title, fits ? Offset(x, (size.height - title.height) / 2) : Offset(-size.width * 2, 0));
+  }
+
+  @override
+  bool shouldRelayout(_BarLayout oldDelegate) => false;
 }

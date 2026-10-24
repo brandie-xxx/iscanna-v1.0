@@ -412,10 +412,12 @@ class RadioPicker<T extends Object> extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
       child: Row(
         children: [
-          for (final MapEntry(:key, value: (title, detail)) in options.entries)
+          for (final (i, MapEntry(:key, value: (title, detail))) in options.entries.indexed) ...[
+            if (i > 0) const SizedBox(width: AppSpace.lg),
             Expanded(
               child: _RadioOption(title: title, detail: detail, selected: key == value, onTap: () => onChanged(key)),
             ),
+          ],
         ],
       ),
     );

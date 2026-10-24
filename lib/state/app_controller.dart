@@ -123,6 +123,9 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether this card's PIN is already in the batch.
+  bool isQueued(ScannedCard card) => _batch.any((c) => c.rawPin == card.rawPin);
+
   void addToBatch(ScannedCard card) {
     _addToBatch(card);
     notifyListeners();
