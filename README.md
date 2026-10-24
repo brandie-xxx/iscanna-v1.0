@@ -41,7 +41,7 @@ from the Actions tab (*Run workflow* → *Also build iOS*).
 | `lib/services/dialer.dart` | `tel:` launch, clipboard |
 | `lib/services/batch_export.dart` | CSV / JSON / TXT export |
 | `lib/state/app_controller.dart` | App state and actions |
-| `lib/screens/` | App shell with tab bar, Scan tab, Batch tab |
+| `lib/screens/` | App shell with tab bar, Scan tab, Batch tab, About sheet |
 | `lib/widgets/` | Scanner, result card, PIN editor, shared HIG components |
 | `lib/theme/app_theme.dart` | Colour tokens and theme |
 
@@ -49,5 +49,5 @@ from the Actions tab (*Run workflow* → *Also build iOS*).
 
 - Photos never leave the phone; the app has no network permission requirements for scanning.
 - iOS does not allow apps to open USSD codes, so on iPhone **Dial** copies the code instead.
-- Fonts: Geist for interface text and Geist Pixel for codes (SIL Open Font License,
-  `assets/fonts/OFL-Geist.txt`, `assets/fonts/OFL-GeistPixel.txt`).
+- Fonts: Sofia Sans for body text and Chivo for headings and codes (SIL Open Font License,
+  `assets/fonts/OFL-SofiaSans.txt`, `assets/fonts/OFL-Chivo.txt`).

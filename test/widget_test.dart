@@ -60,7 +60,7 @@ void main() {
     // Header brand only; no sample presets, no footer wordmark; author link present.
     expect(find.text('iscanna1.0'), findsOneWidget);
     expect(find.textContaining('sample', findRichText: true), findsNothing);
-    expect(find.text('No Card Yet'), findsOneWidget);
+    await _scrollTo(tester, find.text('No Card Yet'));
     await _scrollTo(tester, find.text('*exxstatix'));
     expect(find.text('*exxstatix'), findsOneWidget);
 
@@ -91,7 +91,16 @@ void main() {
     expect(find.text('Verified'), findsOneWidget);
     expect(find.text('Dial NetOne'), findsOneWidget);
 
-    // Queue it, then open the Batch tab from the tab bar.
+    // Batch is off at a target of 1: no Add to Batch, and the tab stays put.
+    expect(find.text('Add to Batch'), findsNothing);
+    await tester.tap(find.text('Batch'));
+    await tester.pumpAndSettle();
+    expect(app.tab, AppTab.scanner);
+    expect(find.textContaining('2 or more'), findsWidgets);
+
+    // Turn Batch on, queue the card, then open the Batch tab from the tab bar.
+    await _tapVisible(tester, find.bySemanticsLabel(RegExp('^Increase')));
+    expect(app.batchEnabled, isTrue);
     await _tapVisible(tester, find.text('Add to Batch'));
     await tester.tap(find.text('Batch'));
     await tester.pumpAndSettle();
@@ -111,6 +120,7 @@ void main() {
 
   testWidgets('clearing the batch asks for confirmation', (tester) async {
     final app = await _pumpApp(tester);
+    app.incrementTarget();
     for (final path in ['/econet.jpg', '/netone.jpg']) {
       await _scan(tester, app, path);
       app.addToBatch(app.card!);
@@ -140,5 +150,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('*121*3630146682113274#'), findsOneWidget);
     // Layout overflows would have been reported as test failures above.
+  });
+
+  testWidgets('About sheet opens from the Scan header', (tester) async {
+    await _pumpApp(tester);
+    await tester.tap(find.bySemanticsLabel('About iscanna'));
+    await tester.pumpAndSettle();
+    expect(find.text('Recharge without the typing.'), findsOneWidget);
+    expect(find.text('Why iscanna'.toUpperCase()), findsOneWidget);
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('Recharge without the typing.'), findsNothing);
+  });
+
+  testWidgets('empty Batch keeps the credit at the bottom of the page', (tester) async {
+    final app = await _pumpApp(tester);
+    app.incrementTarget();
+    app.selectTab(AppTab.batch);
+    await tester.pumpAndSettle();
+    expect(find.text('No Cards Yet'), findsOneWidget);
+    final credit = tester.getRect(find.text('*exxstatix'));
+    expect(credit.bottom, greaterThan(844 * 0.75));
   });
 }

@@ -47,61 +47,88 @@ abstract final class AppSpace {
 /// Minimum touch target (Apple HIG: 44pt).
 const double kMinTouchTarget = 44;
 
-/// Interface text.
-const String kFontFamily = 'Geist';
+/// Body and interface text (Sofia Sans, set heavy).
+const String kFontFamily = 'SofiaSans';
 
-/// Codes, PINs and readouts.
-const String kMonoFamily = 'GeistPixel';
+/// Headings, titles, codes and readouts (Chivo, set heavy).
+const String kDisplayFamily = 'Chivo';
 
-/// Typography, following the HIG text-style ladder.
+/// Typography: Chivo for headings and figures, Sofia Sans for everything else.
 abstract final class AppText {
+  /// Screen title (centred, collapses into the navigation bar).
   static const largeTitle = TextStyle(
-    fontFamily: kFontFamily,
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.8,
+    fontFamily: kDisplayFamily,
+    fontSize: 26,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.6,
     color: AppColors.textPrimary,
   );
   static const headline = TextStyle(
-    fontFamily: kFontFamily,
+    fontFamily: kDisplayFamily,
     fontSize: 17,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w700,
     letterSpacing: -0.3,
     color: AppColors.textPrimary,
   );
   static const body = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 15,
-    height: 1.4,
-    letterSpacing: -0.1,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 1.35,
     color: AppColors.textBody,
   );
-  static const callout = TextStyle(fontFamily: kFontFamily, fontSize: 14, height: 1.45, color: AppColors.textSecondary);
-  static const footnote = TextStyle(fontFamily: kFontFamily, fontSize: 13, height: 1.4, color: AppColors.textMuted);
-  static const caption = TextStyle(fontFamily: kFontFamily, fontSize: 12, height: 1.3, color: AppColors.textMuted);
-
-  /// Grouped-section header: small caps, tracked out.
-  static const sectionHeader = TextStyle(
+  static const callout = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.9,
+    height: 1.45,
+    color: AppColors.textSecondary,
+  );
+  static const footnote = TextStyle(
+    fontFamily: kFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+    color: AppColors.textMuted,
+  );
+  static const caption = TextStyle(
+    fontFamily: kFontFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+    height: 1.3,
     color: AppColors.textMuted,
   );
 
-  /// Monospace readout for HUD labels.
+  /// Grouped-section header: small caps, tracked out.
+  static const sectionHeader = TextStyle(
+    fontFamily: kDisplayFamily,
+    fontSize: 11.5,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.1,
+    color: AppColors.textMuted,
+  );
+
+  /// Small tracked readout for HUD labels and counters.
   static const readout = TextStyle(
-    fontFamily: kMonoFamily,
-    fontSize: 10.5,
+    fontFamily: kDisplayFamily,
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
     letterSpacing: 1.2,
     color: AppColors.accent,
   );
 
+  /// Codes and PINs: heavy Chivo with tabular figures so digits line up.
+  static const code = TextStyle(
+    fontFamily: kDisplayFamily,
+    fontWeight: FontWeight.w700,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
+
   static const button = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    letterSpacing: -0.2,
+    fontSize: 17,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.1,
   );
 }
 

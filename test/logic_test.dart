@@ -182,6 +182,17 @@ void main() {
       expect(app.card?.digits[10].confidence, 0);
     });
 
+    test('Batch tab opens only at a target of 2 or more', () {
+      app.selectTab(AppTab.batch);
+      expect(app.tab, AppTab.scanner);
+      app.incrementTarget();
+      app.selectTab(AppTab.batch);
+      expect(app.tab, AppTab.batch);
+      app.decrementTarget();
+      expect(app.batchEnabled, isFalse);
+      expect(app.tab, AppTab.scanner);
+    });
+
     test('target count stays between 1 and 99', () {
       app.decrementTarget();
       expect(app.targetScanCount, 1);

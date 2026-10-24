@@ -35,7 +35,12 @@ class BrandMark extends StatelessWidget {
                 ),
               ],
             ),
-            style: TextStyle(fontFamily: kFontFamily, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.3),
+            style: TextStyle(
+              fontFamily: kDisplayFamily,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
           ),
         ],
       ),
@@ -429,7 +434,9 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
                       Text(
                         detail,
                         style: TextStyle(
-                          fontFamily: kMonoFamily,
+                          fontFamily: kDisplayFamily,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: [FontFeature.tabularFigures()],
                           fontSize: 11,
                           color: key == value ? AppColors.accent : AppColors.textFaint,
                         ),
@@ -495,7 +502,9 @@ class AuthorFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: AppSpace.xxxl, bottom: AppSpace.lg),
+      // heightFactor 1: hug the link vertically instead of filling the space it's given.
       child: Center(
+        heightFactor: 1,
         child: Semantics(
           link: true,
           label: 'exxstatix on X',
@@ -512,7 +521,14 @@ class AuthorFooter extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: AppSpace.lg, vertical: AppSpace.md),
               child: Text(
                 '*exxstatix',
-                style: TextStyle(fontFamily: kMonoFamily, fontSize: 13, color: AppColors.accent, letterSpacing: 0.4),
+                style: TextStyle(
+                  fontFamily: kDisplayFamily,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                  fontSize: 13,
+                  color: AppColors.accent,
+                  letterSpacing: 0.4,
+                ),
               ),
             ),
           ),

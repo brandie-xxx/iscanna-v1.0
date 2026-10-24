@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../data/carriers.dart';
 import '../models/models.dart';
@@ -8,6 +8,8 @@ import '../theme/app_theme.dart';
 import '../widgets/camera_capture.dart';
 import '../widgets/card_results_view.dart';
 import '../widgets/common.dart';
+import '../widgets/screen_header.dart';
+import 'about_sheet.dart';
 
 /// Scan tab: carrier choice, scanner, batch target and the latest result.
 class ScanTab extends StatelessWidget {
@@ -21,23 +23,24 @@ class ScanTab extends StatelessWidget {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
-        const CupertinoSliverNavigationBar(
-          largeTitle: Text('Scan'),
-          leading: Align(widthFactor: 1, alignment: Alignment.centerLeft, child: BrandMark()),
-          border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
-          transitionBetweenRoutes: false,
+        ScreenHeader(
+          title: 'Scan',
+          leading: const BrandMark(),
+          trailing: IconCircleButton(
+            icon: LucideIcons.info,
+            label: 'About iscanna',
+            size: 36,
+            color: AppColors.accent,
+            background: Colors.transparent,
+            onPressed: () => AboutSheet.show(context),
+          ),
         ),
         SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpace.gutter,
-            AppSpace.lg,
-            AppSpace.gutter,
-            MediaQuery.paddingOf(context).bottom + AppSpace.lg,
-          ),
+          padding: const EdgeInsets.fromLTRB(AppSpace.gutter, AppSpace.sm, AppSpace.gutter, 0),
           sliver: SliverList.list(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
                 child: Text('CARRIER', style: AppText.sectionHeader),
               ),
               SegmentedPicker<String>(
@@ -51,8 +54,18 @@ class ScanTab extends StatelessWidget {
               _BatchTargetSection(controller: controller),
               const SizedBox(height: AppSpace.xxl),
               CardResultsView(controller: controller, onDial: onDial),
-              const AuthorFooter(),
             ],
+          ),
+        ),
+        // Credit sits at the very bottom of the page, however short the content.
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+              child: const AuthorFooter(),
+            ),
           ),
         ),
       ],
@@ -74,8 +87,8 @@ class _BatchTargetSection extends StatelessWidget {
     return GroupedSection(
       header: 'Batch Target',
       footer: target > 1
-          ? 'Verified scans are added to the batch automatically until the target is reached.'
-          : 'Raise the target to queue verified scans automatically.',
+          ? 'Batch is on. Verified scans join the queue automatically until the target is reached.'
+          : 'Set 2 or more cards to turn on Batch and queue verified scans automatically.',
       child: Column(
         children: [
           Row(

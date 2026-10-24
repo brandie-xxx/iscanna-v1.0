@@ -39,8 +39,11 @@ class AppController extends ChangeNotifier {
   List<ScannedCard> get batch => List.unmodifiable(_batch);
   bool get isScanning => _isScanning;
 
+  /// Batch mode turns on once the user aims for 2 or more cards.
+  bool get batchEnabled => _targetScanCount >= 2;
+
   void selectTab(AppTab tab) {
-    if (_tab == tab) return;
+    if (_tab == tab || (tab == AppTab.batch && !batchEnabled)) return;
     _tab = tab;
     notifyListeners();
   }
@@ -62,6 +65,7 @@ class AppController extends ChangeNotifier {
   void decrementTarget() {
     if (_targetScanCount <= 1) return;
     _targetScanCount--;
+    if (!batchEnabled) _tab = AppTab.scanner;
     notifyListeners();
   }
 
@@ -111,7 +115,7 @@ class AppController extends ChangeNotifier {
       HapticFeedback.mediumImpact();
     }
     // Only verified reads are queued automatically; others need review first.
-    if (_targetScanCount > 1 && card.canDial) _addToBatch(card);
+    if (batchEnabled && card.canDial) _addToBatch(card);
   }
 
   void saveCorrection(ScannedCard card, String newPin) {

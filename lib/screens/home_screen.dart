@@ -84,7 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          bottomNavigationBar: _TabBar(current: app.tab, batchCount: app.batch.length, onSelect: app.selectTab),
+          bottomNavigationBar: _TabBar(
+            current: app.tab,
+            batchCount: app.batch.length,
+            batchEnabled: app.batchEnabled,
+            onSelect: app.selectTab,
+            onBatchLocked: () =>
+                showToast(context, 'Set Cards to scan to 2 or more on the Scan screen to turn on Batch.'),
+          ),
         ),
       ),
     );
@@ -93,11 +100,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
 /// Frosted HIG tab bar with icon + label items and a count badge on Batch.
 class _TabBar extends StatelessWidget {
-  const _TabBar({required this.current, required this.batchCount, required this.onSelect});
+  const _TabBar({
+    required this.current,
+    required this.batchCount,
+    required this.batchEnabled,
+    required this.onSelect,
+    required this.onBatchLocked,
+  });
 
   final AppTab current;
   final int batchCount;
+
+  /// Batch stays greyed out until the target is 2 or more.
+  final bool batchEnabled;
   final ValueChanged<AppTab> onSelect;
+  final VoidCallback onBatchLocked;
 
   @override
   Widget build(BuildContext context) {
@@ -124,9 +141,10 @@ class _TabBar extends StatelessWidget {
                   _TabItem(
                     icon: LucideIcons.layers,
                     label: 'Batch',
-                    badge: batchCount,
+                    badge: batchEnabled ? batchCount : 0,
                     selected: current == AppTab.batch,
-                    onTap: () => onSelect(AppTab.batch),
+                    enabled: batchEnabled,
+                    onTap: batchEnabled ? () => onSelect(AppTab.batch) : onBatchLocked,
                   ),
                 ],
               ),
@@ -145,6 +163,7 @@ class _TabItem extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.badge = 0,
+    this.enabled = true,
   });
 
   final IconData icon;
@@ -152,15 +171,25 @@ class _TabItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final int badge;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.accent : AppColors.textMuted;
+    final color = selected
+        ? AppColors.accent
+        : enabled
+        ? AppColors.textMuted
+        : AppColors.textFaint.withValues(alpha: 0.6);
     return Expanded(
       child: Semantics(
         button: true,
+        enabled: enabled,
         selected: selected,
-        label: badge > 0 ? '$label, $badge queued' : label,
+        label: !enabled
+            ? '$label, off. Set 2 or more cards to scan to turn on'
+            : badge > 0
+            ? '$label, $badge queued'
+            : label,
         excludeSemantics: true,
         child: Pressable(
           onTap: selected ? null : onTap,
@@ -209,8 +238,8 @@ class _TabItem extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontFamily: kFontFamily,
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 11.5,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: color,
                 ),
               ),

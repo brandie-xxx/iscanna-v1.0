@@ -176,56 +176,67 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
       borderRadius: BorderRadius.circular(AppRadius.control),
       child: ColoredBox(
         color: AppColors.inset,
+        // Square viewfinder: tall enough to frame the whole card, with a full-width strip window.
         child: AspectRatio(
-          aspectRatio: 4 / 3,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                child: live
-                    ? _LiveFeed(key: const ValueKey('live'), camera: _camera!)
-                    : preview != null
-                    ? _PhotoPreview(key: ValueKey(preview), path: preview)
-                    : const _EmptyViewfinder(key: ValueKey('empty')),
-              ),
-              if (live || preview != null) _FrameBrackets(dim: !live),
-              if (live || app.isScanning) const _ScanLine(),
-              if (live)
-                Positioned(
-                  top: AppSpace.md,
-                  right: AppSpace.md,
-                  child: IconCircleButton(
-                    icon: _torchOn ? LucideIcons.zap : LucideIcons.zapOff,
-                    label: _torchOn ? 'Turn torch off' : 'Turn torch on',
-                    active: _torchOn,
-                    size: 38,
-                    background: AppColors.background.withValues(alpha: 0.6),
-                    onPressed: _toggleTorch,
+          aspectRatio: 1,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final strip = stripWindow(box.biggest);
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    child: live
+                        ? _LiveFeed(key: const ValueKey('live'), camera: _camera!)
+                        : preview != null
+                        ? _PhotoPreview(key: ValueKey(preview), path: preview)
+                        : const SizedBox.expand(key: ValueKey('empty')),
                   ),
-                ),
-              if (live)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: AppSpace.md,
-                  child: Center(child: _HudChip('ALIGN PIN INSIDE FRAME')),
-                ),
-              if (app.isScanning && !live)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: AppSpace.md,
-                  child: Center(child: _HudChip('READING PIN…')),
-                ),
-              if (_cameraError != null)
-                Positioned(
-                  left: AppSpace.md,
-                  right: AppSpace.md,
-                  bottom: AppSpace.md,
-                  child: _ErrorBanner(message: _cameraError!),
-                ),
-            ],
+                  if (live || preview != null) _StripScrim(strip: strip),
+                  _StripFrame(strip: strip, bright: live || preview != null),
+                  if (live || app.isScanning) _ScanBeam(strip: strip),
+                  if (!live && preview == null) _EmptyViewfinder(strip: strip),
+                  Positioned(
+                    left: strip.left + 2,
+                    top: strip.top - 22,
+                    child: Text(
+                      live ? '● LIVE · PIN STRIP' : 'PIN STRIP',
+                      style: AppText.readout.copyWith(
+                        color: live || preview != null ? AppColors.accent : AppColors.textFaint,
+                      ),
+                    ),
+                  ),
+                  if (live)
+                    Positioned(
+                      top: AppSpace.md,
+                      right: AppSpace.md,
+                      child: IconCircleButton(
+                        icon: _torchOn ? LucideIcons.zap : LucideIcons.zapOff,
+                        label: _torchOn ? 'Turn torch off' : 'Turn torch on',
+                        active: _torchOn,
+                        size: 38,
+                        background: AppColors.background.withValues(alpha: 0.6),
+                        onPressed: _toggleTorch,
+                      ),
+                    ),
+                  if (live || app.isScanning)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: strip.bottom + AppSpace.md,
+                      child: Center(child: _HudChip(live ? 'FIT THE WHOLE STRIP IN THE FRAME' : 'READING PIN…')),
+                    ),
+                  if (_cameraError != null)
+                    Positioned(
+                      left: AppSpace.md,
+                      right: AppSpace.md,
+                      bottom: AppSpace.md,
+                      child: _ErrorBanner(message: _cameraError!),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -365,41 +376,82 @@ class _PhotoPreview extends StatelessWidget {
   }
 }
 
-/// Four accent corner brackets marking the read area.
-class _FrameBrackets extends StatelessWidget {
-  const _FrameBrackets({this.dim = false});
+/// The window a card's PIN strip should sit in: nearly full width, about a third as tall.
+@visibleForTesting
+Rect stripWindow(Size box) {
+  final width = box.width - 2 * AppSpace.lg;
+  final height = (width / 3.4).clamp(76.0, box.height * 0.45);
+  return Rect.fromCenter(center: box.center(Offset.zero), width: width, height: height);
+}
 
-  final bool dim;
+/// Dims everything outside the strip window.
+class _StripScrim extends StatelessWidget {
+  const _StripScrim({required this.strip});
+
+  final Rect strip;
 
   @override
   Widget build(BuildContext context) {
-    final side = BorderSide(color: AppColors.accent.withValues(alpha: dim ? 0.5 : 1), width: 2.5);
-    Widget corner(BorderRadius r, Border b) => Container(
-      width: 26,
-      height: 26,
-      decoration: BoxDecoration(border: b, borderRadius: r),
+    return IgnorePointer(child: CustomPaint(painter: _ScrimPainter(strip)));
+  }
+}
+
+class _ScrimPainter extends CustomPainter {
+  _ScrimPainter(this.strip);
+
+  final Rect strip;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRRect(RRect.fromRectAndRadius(strip, const Radius.circular(10)));
+    canvas.drawPath(path, Paint()..color = AppColors.background.withValues(alpha: 0.55));
+  }
+
+  @override
+  bool shouldRepaint(_ScrimPainter old) => old.strip != strip;
+}
+
+/// Hairline outline plus accent corner brackets around the strip window.
+class _StripFrame extends StatelessWidget {
+  const _StripFrame({required this.strip, required this.bright});
+
+  final Rect strip;
+  final bool bright;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = bright ? AppColors.accent : AppColors.accent.withValues(alpha: 0.45);
+    final side = BorderSide(color: color, width: 2.5);
+    const r = Radius.circular(10);
+    const arm = 28.0;
+    Widget corner(Alignment at, Border border, BorderRadius radius) => Align(
+      alignment: at,
+      child: Container(
+        width: arm,
+        height: arm,
+        decoration: BoxDecoration(border: border, borderRadius: radius),
+      ),
     );
-    const r = Radius.circular(8);
-    return IgnorePointer(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpace.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Positioned.fromRect(
+      rect: strip,
+      child: IgnorePointer(
+        child: Stack(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                corner(const BorderRadius.only(topLeft: r), Border(top: side, left: side)),
-                corner(const BorderRadius.only(topRight: r), Border(top: side, right: side)),
-              ],
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
+                ),
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                corner(const BorderRadius.only(bottomLeft: r), Border(bottom: side, left: side)),
-                corner(const BorderRadius.only(bottomRight: r), Border(bottom: side, right: side)),
-              ],
-            ),
+            corner(Alignment.topLeft, Border(top: side, left: side), const BorderRadius.only(topLeft: r)),
+            corner(Alignment.topRight, Border(top: side, right: side), const BorderRadius.only(topRight: r)),
+            corner(Alignment.bottomLeft, Border(bottom: side, left: side), const BorderRadius.only(bottomLeft: r)),
+            corner(Alignment.bottomRight, Border(bottom: side, right: side), const BorderRadius.only(bottomRight: r)),
           ],
         ),
       ),
@@ -407,16 +459,18 @@ class _FrameBrackets extends StatelessWidget {
   }
 }
 
-/// Glowing line sweeping the frame while the camera is live or a photo is being read.
-class _ScanLine extends StatefulWidget {
-  const _ScanLine();
+/// Glowing beam sweeping along the strip while the camera is live or a photo is being read.
+class _ScanBeam extends StatefulWidget {
+  const _ScanBeam({required this.strip});
+
+  final Rect strip;
 
   @override
-  State<_ScanLine> createState() => _ScanLineState();
+  State<_ScanBeam> createState() => _ScanBeamState();
 }
 
-class _ScanLineState extends State<_ScanLine> with SingleTickerProviderStateMixin {
-  late final AnimationController _sweep = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
+class _ScanBeamState extends State<_ScanBeam> with SingleTickerProviderStateMixin {
+  late final AnimationController _sweep = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))
     ..repeat(reverse: true);
 
   @override
@@ -427,29 +481,33 @@ class _ScanLineState extends State<_ScanLine> with SingleTickerProviderStateMixi
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: LayoutBuilder(
-        builder: (context, box) => AnimatedBuilder(
+    final strip = widget.strip.deflate(6);
+    return Positioned.fromRect(
+      rect: strip,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
           animation: _sweep,
           builder: (context, _) {
             final t = Curves.easeInOutSine.transform(_sweep.value);
             return Stack(
               children: [
                 Positioned(
-                  left: AppSpace.xl + 6,
-                  right: AppSpace.xl + 6,
-                  top: AppSpace.xl + t * (box.maxHeight - 2 * AppSpace.xl - 2),
+                  left: t * (strip.width - 2),
+                  top: 0,
+                  bottom: 0,
                   child: Container(
-                    height: 2,
+                    width: 2,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                         colors: [
                           AppColors.accent.withValues(alpha: 0),
                           AppColors.accent,
                           AppColors.accent.withValues(alpha: 0),
                         ],
                       ),
-                      boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.6), blurRadius: 10)],
+                      boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.7), blurRadius: 12)],
                     ),
                   ),
                 ),
@@ -480,40 +538,65 @@ class _HudChip extends StatelessWidget {
   }
 }
 
+/// Empty state: prompt above the strip window, privacy note below it.
 class _EmptyViewfinder extends StatelessWidget {
-  const _EmptyViewfinder({super.key});
+  const _EmptyViewfinder({required this.strip});
+
+  final Rect strip;
 
   @override
   Widget build(BuildContext context) {
-    // Scrolls instead of overflowing when large text doesn't fit the 4:3 viewport.
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpace.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: const Icon(LucideIcons.scanLine, size: 26, color: AppColors.accent),
-            ),
-            const SizedBox(height: AppSpace.lg),
-            const Text(
-              'Scan a recharge card',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: kFontFamily,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+    return Stack(
+      children: [
+        // Prompt fills the space above the "PIN STRIP" label.
+        Positioned(
+          left: AppSpace.lg,
+          right: AppSpace.lg,
+          top: AppSpace.md,
+          height: (strip.top - 34 - AppSpace.md).clamp(0.0, double.infinity),
+          child: const Align(
+            alignment: Alignment.bottomCenter,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.scanLine, size: 26, color: AppColors.accent),
+                  SizedBox(height: AppSpace.sm),
+                  Text(
+                    'Scan a recharge card',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: kDisplayFamily,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: AppSpace.xs),
-            const Text('NetOne or Econet · read on this device', textAlign: TextAlign.center, style: AppText.footnote),
-          ],
+          ),
         ),
-      ),
+        Positioned.fromRect(
+          rect: strip,
+          child: Center(
+            child: Text(
+              '0000  0000  0000  0000',
+              style: AppText.code.copyWith(fontSize: 18, color: AppColors.textFaint.withValues(alpha: 0.6)),
+            ),
+          ),
+        ),
+        Positioned(
+          left: AppSpace.lg,
+          right: AppSpace.lg,
+          top: strip.bottom + AppSpace.lg,
+          child: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('NetOne or Econet · read on this device', textAlign: TextAlign.center, style: AppText.footnote),
+          ),
+        ),
+      ],
     );
   }
 }

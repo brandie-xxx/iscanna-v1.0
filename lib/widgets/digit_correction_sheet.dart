@@ -212,7 +212,9 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
           child: Text(
             _digits[i],
             style: TextStyle(
-              fontFamily: kMonoFamily,
+              fontFamily: kDisplayFamily,
+              fontWeight: FontWeight.w700,
+              fontFeatures: [FontFeature.tabularFigures()],
               fontSize: 18,
               color: selected
                   ? AppColors.background

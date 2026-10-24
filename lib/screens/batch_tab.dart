@@ -15,6 +15,7 @@ import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/digit_correction_sheet.dart';
+import '../widgets/screen_header.dart';
 
 /// Batch tab: queued cards (tap for actions, swipe to delete), export, and Clear in the nav bar.
 class BatchTab extends StatefulWidget {
@@ -118,7 +119,16 @@ class _BatchTabState extends State<BatchTab> {
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
-        title: Text(card.wrappedPin, style: const TextStyle(fontFamily: kMonoFamily, fontSize: 15, letterSpacing: 0.5)),
+        title: Text(
+          card.wrappedPin,
+          style: const TextStyle(
+            fontFamily: kDisplayFamily,
+            fontWeight: FontWeight.w700,
+            fontFeatures: [FontFeature.tabularFigures()],
+            fontSize: 15,
+            letterSpacing: 0.5,
+          ),
+        ),
         message: Text(
           '${card.carrierName} · ${card.formattedPin}',
           style: const TextStyle(fontFamily: kFontFamily, fontSize: 13),
@@ -172,30 +182,28 @@ class _BatchTabState extends State<BatchTab> {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       slivers: [
-        CupertinoSliverNavigationBar(
-          largeTitle: const Text('Batch'),
-          leading: const Align(widthFactor: 1, alignment: Alignment.centerLeft, child: BrandMark()),
+        ScreenHeader(
+          title: 'Batch',
+          leading: const BrandMark(),
           trailing: cards.isEmpty
               ? null
               : CupertinoButton(
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
                   minimumSize: const Size(kMinTouchTarget, kMinTouchTarget),
                   onPressed: _confirmClear,
                   child: const Text(
                     'Clear',
-                    style: TextStyle(fontFamily: kFontFamily, fontSize: 17, color: AppColors.danger),
+                    style: TextStyle(
+                      fontFamily: kFontFamily,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.danger,
+                    ),
                   ),
                 ),
-          border: const Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
-          transitionBetweenRoutes: false,
         ),
         SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpace.gutter,
-            AppSpace.lg,
-            AppSpace.gutter,
-            MediaQuery.paddingOf(context).bottom + AppSpace.lg,
-          ),
+          padding: const EdgeInsets.fromLTRB(AppSpace.gutter, AppSpace.sm, AppSpace.gutter, 0),
           sliver: SliverList.list(
             children: [
               if (cards.isEmpty)
@@ -277,8 +285,18 @@ class _BatchTabState extends State<BatchTab> {
                   ),
                 ),
               ],
-              const AuthorFooter(),
             ],
+          ),
+        ),
+        // Credit sits at the very bottom of the page, however short the content.
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+              child: const AuthorFooter(),
+            ),
           ),
         ),
       ],
@@ -350,7 +368,9 @@ class _BatchRow extends StatelessWidget {
                     child: Text(
                       '${index + 1}'.padLeft(2, '0'),
                       style: TextStyle(
-                        fontFamily: kMonoFamily,
+                        fontFamily: kDisplayFamily,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: [FontFeature.tabularFigures()],
                         fontSize: 11,
                         color: card.canDial ? AppColors.accent : AppColors.warning,
                       ),
@@ -371,7 +391,9 @@ class _BatchRow extends StatelessWidget {
                               card.wrappedPin,
                               maxLines: 1,
                               style: const TextStyle(
-                                fontFamily: kMonoFamily,
+                                fontFamily: kDisplayFamily,
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: [FontFeature.tabularFigures()],
                                 fontSize: 17,
                                 color: AppColors.textPrimary,
                                 letterSpacing: 0.4,
@@ -430,19 +452,12 @@ class _EmptyBatch extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppSpace.xxxl * 2),
       child: Column(
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: const Icon(LucideIcons.layers, size: 30, color: AppColors.accent),
-          ),
-          const SizedBox(height: AppSpace.xl),
           const Text('No Cards Yet', style: AppText.headline),
           const SizedBox(height: 6),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpace.xxl),
             child: Text(
-              'Scanned cards you add to the batch appear here, ready to dial, copy or export.',
+              'Verified scans join the batch automatically, ready to dial, copy or export.',
               textAlign: TextAlign.center,
               style: AppText.callout,
             ),

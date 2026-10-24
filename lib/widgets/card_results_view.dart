@@ -121,7 +121,9 @@ class _CardResultsViewState extends State<CardResultsView> {
                   card.wrappedPin,
                   maxLines: 1,
                   style: TextStyle(
-                    fontFamily: kMonoFamily,
+                    fontFamily: kDisplayFamily,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: [FontFeature.tabularFigures()],
                     fontSize: 28,
                     letterSpacing: 1,
                     color: card.canDial ? AppColors.accent : AppColors.textSecondary,
@@ -196,16 +198,19 @@ class _CardResultsViewState extends State<CardResultsView> {
                   onPressed: () => _copy(card),
                 ),
               ),
-              const SizedBox(width: AppSpace.sm),
-              Expanded(
-                child: AppButton(
-                  label: _added ? 'Added' : 'Add to Batch',
-                  icon: _added ? LucideIcons.check : LucideIcons.listPlus,
-                  kind: _added ? ButtonKind.tinted : ButtonKind.gray,
-                  expand: true,
-                  onPressed: () => _addToBatch(card),
+              // Batch actions only exist once Batch is on (target of 2 or more).
+              if (widget.controller.batchEnabled) ...[
+                const SizedBox(width: AppSpace.sm),
+                Expanded(
+                  child: AppButton(
+                    label: _added ? 'Added' : 'Add to Batch',
+                    icon: _added ? LucideIcons.check : LucideIcons.listPlus,
+                    kind: _added ? ButtonKind.tinted : ButtonKind.gray,
+                    expand: true,
+                    onPressed: () => _addToBatch(card),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
@@ -242,7 +247,14 @@ class _PinText extends StatelessWidget {
         ],
       ),
       semanticsLabel: 'PIN ${card.rawPin.split('').join(' ')}',
-      style: const TextStyle(fontFamily: kMonoFamily, fontSize: 18, color: AppColors.textPrimary, letterSpacing: 1),
+      style: const TextStyle(
+        fontFamily: kDisplayFamily,
+        fontWeight: FontWeight.w700,
+        fontFeatures: [FontFeature.tabularFigures()],
+        fontSize: 18,
+        color: AppColors.textPrimary,
+        letterSpacing: 1,
+      ),
     );
   }
 }
