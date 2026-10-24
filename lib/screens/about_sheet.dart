@@ -7,6 +7,9 @@ import '../widgets/common.dart';
 /// Shown in About; keep in step with `version` in pubspec.yaml.
 const String kAppVersion = '1.0.0';
 
+/// The app's tagline.
+const String kTagline = 'Scan - Recharge';
+
 /// "About iscanna" sheet: what it does, how to use it, batch and privacy in brief.
 class AboutSheet extends StatelessWidget {
   const AboutSheet({super.key});
@@ -67,7 +70,6 @@ class AboutSheet extends StatelessWidget {
               const SizedBox(height: AppSpace.xxl),
               const GroupedSection(
                 header: 'How it works',
-                footer: 'On iPhone, Dial copies the code for you to paste into Phone.',
                 padding: EdgeInsets.symmetric(horizontal: AppSpace.lg, vertical: AppSpace.sm),
                 child: Column(
                   children: [
@@ -78,7 +80,7 @@ class AboutSheet extends StatelessWidget {
                     _Step(
                       number: 3,
                       title: 'Dial',
-                      text: 'The full code opens in your dialer: *133*PIN# for NetOne, *121*PIN# for Econet.',
+                      text: 'Tap Dial to run the full code: *133*PIN# for NetOne, *121*PIN# for Econet.',
                     ),
                   ],
                 ),
@@ -90,11 +92,6 @@ class AboutSheet extends StatelessWidget {
                   'Set Cards to scan to 2 or more. Verified scans are queued so you can dial, copy or export them.',
                   style: AppText.footnote,
                 ),
-              ),
-              const SizedBox(height: AppSpace.xxl),
-              GroupedSection(
-                header: 'Privacy',
-                child: Text('Cards are read on your phone. Nothing is uploaded.', style: AppText.footnote),
               ),
               const SizedBox(height: AppSpace.xxl),
               Center(child: Text('Version $kAppVersion', style: AppText.caption)),
@@ -119,34 +116,24 @@ class _Hero extends StatelessWidget {
           height: 56,
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
+            shape: BoxShape.circle,
             border: Border.all(color: AppColors.borderStrong, width: 0.5),
           ),
           child: Icon(LucideIcons.scanLine, size: 26, color: AppColors.accent),
         ),
         const SizedBox(height: AppSpace.lg),
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: 'iscanna',
-                style: TextStyle(color: AppColors.textPrimary),
-              ),
-              TextSpan(
-                text: '1.0',
-                style: TextStyle(color: AppColors.accent),
-              ),
-            ],
-          ),
-          style: const TextStyle(
+        Text(
+          'iscanna',
+          style: TextStyle(
             fontFamily: kFontFamily,
             fontSize: 17,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: AppSpace.xs),
-        Text('Scan a recharge card and dial it in one tap.', textAlign: TextAlign.center, style: AppText.footnote),
+        Text(kTagline, textAlign: TextAlign.center, style: AppText.footnote),
       ],
     );
   }

@@ -168,13 +168,17 @@ const String kButtonFamily = 'SofiaSans';
 /// Codes, PINs and other figures (Chivo, set heavy).
 const String kDisplayFamily = 'Chivo';
 
+/// Edit PIN keypad digits (Inter Tight, extra bold).
+const String kKeypadFamily = 'InterTight';
+
 /// Typography: Inter for text, Sofia Sans for buttons, Chivo for figures.
 /// Casing is always standard (sentence/title case): never force uppercase.
 abstract final class AppText {
   /// Screen title (centred, collapses into the navigation bar).
   static TextStyle get largeTitle => TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 19,
+    // Same size as the header wordmark.
+    fontSize: 15,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.6,
     color: AppColors.textPrimary,

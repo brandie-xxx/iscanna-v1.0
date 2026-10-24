@@ -61,7 +61,7 @@ class _IscannaAppState extends State<IscannaApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'iscanna1.0',
+      title: 'iscanna',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       // Action sheets and alerts pick up the app's colours and fonts.

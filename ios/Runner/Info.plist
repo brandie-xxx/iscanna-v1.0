@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>iscanna1.0</string>
+	<string>iscanna</string>
 	<key>NSCameraUsageDescription</key>
 	<string>The camera is used to read the PIN on recharge cards. Photos are processed on this device and never uploaded.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -395,68 +394,107 @@ class Capsule extends StatelessWidget {
   }
 }
 
-/// iOS sliding segmented control in the app's colours.
-class SegmentedPicker<T extends Object> extends StatelessWidget {
-  const SegmentedPicker({super.key, required this.value, required this.segments, required this.onChanged});
+/// Radio buttons laid out side by side: a ring per option, filled when selected.
+class RadioPicker<T extends Object> extends StatelessWidget {
+  const RadioPicker({super.key, required this.value, required this.options, required this.onChanged});
 
   final T value;
 
   /// Value → (title, optional detail shown dimmed after it).
-  final Map<T, (String, String?)> segments;
+  final Map<T, (String, String?)> options;
   final ValueChanged<T> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final light = AppColors.brightness == Brightness.light;
-    return SizedBox(
-      width: double.infinity,
-      child: CupertinoSlidingSegmentedControl<T>(
-        groupValue: value,
-        // Light mode follows iOS: a white thumb on a grey track.
-        backgroundColor: light ? AppColors.surface : AppColors.inset,
-        thumbColor: light ? AppColors.panel : AppColors.surfaceHover,
-        padding: const EdgeInsets.all(3),
-        onValueChanged: (v) {
-          if (v == null || v == value) return;
-          HapticFeedback.selectionClick();
-          onChanged(v);
-        },
-        children: {
-          for (final MapEntry(:key, value: (title, detail)) in segments.entries)
-            key: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 9, horizontal: AppSpace.xs),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontFamily: kButtonFamily,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        color: key == value ? AppColors.textPrimary : AppColors.textSecondary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+      child: Row(
+        children: [
+          for (final MapEntry(:key, value: (title, detail)) in options.entries)
+            Expanded(
+              child: _RadioOption(title: title, detail: detail, selected: key == value, onTap: () => onChanged(key)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RadioOption extends StatelessWidget {
+  const _RadioOption({required this.title, required this.detail, required this.selected, required this.onTap});
+
+  final String title;
+  final String? detail;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: selected,
+      button: true,
+      label: title,
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: selected ? null : onTap,
+        pressedScale: 1,
+        child: SizedBox(
+          height: kMinTouchTarget,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: selected ? AppColors.accent : AppColors.borderStrong, width: 2),
+                    ),
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 160),
+                      scale: selected ? 1 : 0,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
                       ),
                     ),
-                    if (detail != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        detail,
-                        style: TextStyle(
-                          fontFamily: kDisplayFamily,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                          fontSize: 10.5,
-                          color: key == value ? AppColors.accent : AppColors.textFaint,
-                        ),
+                  ),
+                  const SizedBox(width: AppSpace.sm + 2),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: kButtonFamily,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                    ),
+                  ),
+                  if (detail != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      detail!,
+                      style: TextStyle(
+                        fontFamily: kDisplayFamily,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        fontSize: 11,
+                        color: selected ? AppColors.accent : AppColors.textFaint,
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
-        },
+          ),
+        ),
       ),
     );
   }

@@ -170,7 +170,7 @@ class _CardResultsViewState extends State<CardResultsView> {
           ),
           const SizedBox(height: AppSpace.xxl),
           AppButton(
-            label: card.canDial ? 'Dial ${card.carrierName}' : 'Fix PIN to Dial',
+            label: 'Dial',
             icon: LucideIcons.phoneCall,
             kind: ButtonKind.filled,
             size: ButtonSize.large,
@@ -181,7 +181,7 @@ class _CardResultsViewState extends State<CardResultsView> {
           if (card.canDial && !canDialUssd) ...[
             const SizedBox(height: AppSpace.sm),
             Text(
-              "iPhone can't open USSD codes from apps, so Dial copies the code for you to paste in Phone.",
+              "This phone can't open USSD codes from apps, so Dial copies the code for you to paste in the Phone app.",
               textAlign: TextAlign.center,
               style: AppText.caption,
             ),

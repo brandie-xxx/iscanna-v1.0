@@ -57,7 +57,7 @@ class _BatchTabState extends State<BatchTab> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: _format.mimeType)],
-          subject: 'iscanna1.0 batch export',
+          subject: 'iscanna batch export',
           sharePositionOrigin: origin,
         ),
       );
@@ -140,7 +140,7 @@ class _BatchTabState extends State<BatchTab> {
                 Navigator.pop(ctx);
                 widget.onDial(card);
               },
-              child: Text('Dial ${card.carrierName}', style: action),
+              child: const Text('Dial', style: action),
             ),
           CupertinoActionSheetAction(
             onPressed: () {

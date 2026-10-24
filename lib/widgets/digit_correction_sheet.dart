@@ -274,7 +274,7 @@ class _KeyState extends State<_Key> {
               ? Icon(widget.icon, size: 22, color: fg)
               : Text(
                   widget.label!,
-                  style: TextStyle(fontFamily: kButtonFamily, fontSize: 21, fontWeight: FontWeight.w600, color: fg),
+                  style: TextStyle(fontFamily: kKeypadFamily, fontSize: 23, fontWeight: FontWeight.w800, color: fg),
                 ),
         ),
       ),

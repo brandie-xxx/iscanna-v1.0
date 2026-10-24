@@ -43,9 +43,9 @@ class ScanTab extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
                 child: Text('Carrier', style: AppText.sectionHeader),
               ),
-              SegmentedPicker<String>(
+              RadioPicker<String>(
                 value: controller.format.id,
-                segments: {for (final f in kCarrierFormats) f.id: (f.name, f.prefix)},
+                options: {for (final f in kCarrierFormats) f.id: (f.name, f.prefix)},
                 onChanged: (id) => controller.selectFormat(findFormatById(id)!),
               ),
               const SizedBox(height: AppSpace.xxl),

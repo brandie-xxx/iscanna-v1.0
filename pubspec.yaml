@@ -104,3 +104,8 @@ flutter:
           weight: 800
         - asset: assets/fonts/Chivo-900.ttf
           weight: 900
+    # Edit PIN keypad digits (ASCII subset).
+    - family: InterTight
+      fonts:
+        - asset: assets/fonts/InterTight-800.ttf
+          weight: 800

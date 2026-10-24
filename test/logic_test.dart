@@ -124,7 +124,7 @@ void main() {
     });
 
     test('file name', () {
-      expect(exportFileName(ExportFormat.csv, DateTime(2026, 10, 23)), 'iscanna1.0-batch-2026-10-23.csv');
+      expect(exportFileName(ExportFormat.csv, DateTime(2026, 10, 23)), 'iscanna-batch-2026-10-23.csv');
     });
   });
 

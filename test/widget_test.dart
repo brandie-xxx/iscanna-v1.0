@@ -75,7 +75,7 @@ void main() {
 
     // A partial read needs review and can't be dialed.
     await _scan(tester, app, '/partial.jpg');
-    await _scrollTo(tester, find.text('Fix PIN to Dial'));
+    await _scrollTo(tester, find.text('Dial'));
     expect(find.text('Review'), findsOneWidget);
 
     // Editor opens on the first unread digit; Cancel discards edits.
@@ -94,7 +94,7 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(find.text('Verified'), findsOneWidget);
-    expect(find.text('Dial NetOne'), findsOneWidget);
+    expect(find.text('Dial'), findsOneWidget);
 
     // Batch is off at a target of 1: no Add to Batch, and the tab stays put.
     expect(find.text('Add to Batch'), findsNothing);
@@ -156,7 +156,7 @@ void main() {
     app.incrementTarget();
     await _scan(tester, app, '/partial.jpg');
     await _scrollTo(tester, find.text('Review'));
-    expect(find.text('Fix PIN to Dial'), findsOneWidget);
+    expect(find.text('Dial'), findsOneWidget);
 
     await _scan(tester, app, '/econet.jpg');
     app.selectTab(AppTab.batch);
@@ -170,7 +170,9 @@ void main() {
     await tester.tap(find.bySemanticsLabel('About iscanna'));
     await tester.pumpAndSettle();
     expect(find.text('How it works'), findsOneWidget);
-    expect(find.text('Scan a recharge card and dial it in one tap.'), findsOneWidget);
+    expect(find.text('Scan - Recharge'), findsOneWidget);
+    expect(find.text('Privacy'), findsNothing);
+    expect(find.textContaining('iPhone'), findsNothing);
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     expect(find.text('How it works'), findsNothing);

@@ -9,9 +9,15 @@
 
 ## Typefaces (iscanna)
 - Inter: interface text (headings, labels, body).
-- Sofia Sans: buttons and controls (buttons, tab bar, segmented controls, keypad, sheet actions).
+- Sofia Sans: buttons and controls (buttons, tab bar, radio labels, sheet actions).
   Exception: the CSV / JSON / TXT export choice uses Inter.
 - Chivo: codes, PINs and other figures.
+- Inter Tight (extra bold): the digits on the Edit PIN keypad.
+
+## Naming
+- The app is called "iscanna". The "1.0" appears only in the header wordmark.
+- Tagline: "Scan - Recharge".
+- The app is cross-platform: don't mention iPhone (or any one platform) in UI copy.
 
 ## Credit
 - The `*exxstatix` credit links to https://x.com/exxstatix and stays subtle (small, muted).

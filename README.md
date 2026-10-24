@@ -1,4 +1,4 @@
-# iscanna1.0
+# iscanna
 
 Mobile app (Flutter, Android + iOS) that scans NetOne / Econet recharge cards, reads the
 16-digit PIN **on-device** with Google ML Kit, wraps it in the carrier's USSD code
@@ -48,6 +48,6 @@ for an unsigned iOS build.
 ## Notes
 
 - Photos never leave the phone; the app has no network permission requirements for scanning.
-- iOS does not allow apps to open USSD codes, so on iPhone **Dial** copies the code instead.
+- iOS does not allow apps to open USSD codes, so on iOS **Dial** copies the code instead.
 - Fonts: Inter for interface text, Sofia Sans for buttons and controls, Chivo for codes
   (SIL Open Font License: `assets/fonts/OFL-Inter.txt`, `OFL-SofiaSans.txt`, `OFL-Chivo.txt`).

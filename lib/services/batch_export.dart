@@ -37,5 +37,5 @@ String buildExport(List<ScannedCard> cards, ExportFormat format) {
 
 String exportFileName(ExportFormat format, DateTime now) {
   final date = now.toIso8601String().substring(0, 10);
-  return 'iscanna1.0-batch-$date.${format.extension}';
+  return 'iscanna-batch-$date.${format.extension}';
 }
