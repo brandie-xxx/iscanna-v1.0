@@ -176,6 +176,9 @@ void main() {
     expect(find.text('How it works'), findsOneWidget);
     expect(find.text('Scan - Recharge'), findsOneWidget);
     expect(find.text('Privacy'), findsNothing);
+    final about = find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first;
+    await tester.scrollUntilVisible(find.text('Not affiliated with NetOne or Econet.'), 200, scrollable: about);
+    expect(find.text('Not affiliated with NetOne or Econet.'), findsOneWidget);
     expect(find.textContaining('iPhone'), findsNothing);
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();

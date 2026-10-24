@@ -93,6 +93,14 @@ class AboutSheet extends StatelessWidget {
               ),
               const SizedBox(height: AppSpace.xxl),
               Center(child: Text('Version $kAppVersion', style: AppText.caption)),
+              const SizedBox(height: AppSpace.xs),
+              Center(
+                child: Text(
+                  'Not affiliated with NetOne or Econet.',
+                  textAlign: TextAlign.center,
+                  style: AppText.caption.copyWith(color: AppColors.textFaint),
+                ),
+              ),
               const AuthorFooter(top: 0),
             ],
           ),
