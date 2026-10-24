@@ -5,6 +5,86 @@ import '../models/models.dart';
 
 const int kPinLength = 16;
 
+/// One line of text from the OCR engine, with its weakest digit confidence (0–100) when reported.
+class OcrLine {
+  const OcrLine(this.text, [this.confidence]);
+
+  final String text;
+  final int? confidence;
+}
+
+// Letters OCR often reads in place of digits on printed cards.
+const Map<String, String> _lookalikes = {
+  'O': '0', 'o': '0', 'D': '0', 'Q': '0', 'U': '0', //
+  'I': '1', 'l': '1', 'i': '1', '|': '1', '!': '1', //
+  'Z': '2', 'z': '2', 'S': '5', 's': '5', r'$': '5', //
+  'B': '8', 'G': '6', 'b': '6', 'T': '7', 'g': '9', 'q': '9',
+};
+
+/// Swaps lookalike letters for digits, but only inside number-like tokens (at least half digits),
+/// so ordinary words on the card stay as they are.
+String normalizeDigits(String text) => text.splitMapJoin(
+  RegExp(r'\S+'),
+  onMatch: (m) {
+    final token = m[0]!;
+    final digits = RegExp(r'\d').allMatches(token).length;
+    final significant = token.replaceAll(RegExp(r'[.\-–:]'), '').length;
+    if (digits == 0 || digits * 2 < significant) return token;
+    return token.split('').map((c) => _lookalikes[c] ?? c).join();
+  },
+  onNonMatch: (s) => s,
+);
+
+// 16 digits with at most short separators between them, not part of a longer number.
+final RegExp _fullPin = RegExp(r'(?<!\d[ \t.\-–]{0,2})(?:\d[ \t.\-–]{0,2}){15}\d(?![ \t.\-–]{0,2}\d)');
+// A shorter run (6–15 digits) for partial reads the user can complete.
+final RegExp _partialPin = RegExp(r'(?<!\d[ \t.\-–]{0,2})(?:\d[ \t.\-–]{0,2}){5,14}\d(?![ \t.\-–]{0,2}\d)');
+
+/// Picks the text most likely to be the card's PIN from OCR lines.
+///
+/// Prefers a full 16-digit number, scoring a known carrier prefix and a single-line read above
+/// others; also tries neighbouring lines joined, in case the strip wrapped. Falls back to the
+/// longest partial number so the user can fill in the rest, or '' when nothing looks like a PIN.
+OcrLine pickPinText(List<OcrLine> lines) {
+  final norm = [for (final l in lines) OcrLine(normalizeDigits(l.text), l.confidence)];
+  int? weakest(int? a, int? b) => a == null ? b : (b == null ? a : (a < b ? a : b));
+  final sources = [
+    for (final l in norm) (line: l, single: true),
+    for (var i = 0; i + 1 < norm.length; i++)
+      (
+        line: OcrLine('${norm[i].text} ${norm[i + 1].text}', weakest(norm[i].confidence, norm[i + 1].confidence)),
+        single: false,
+      ),
+  ];
+
+  OcrLine? best;
+  var bestScore = -1;
+  for (final (:line, :single) in sources) {
+    for (final m in _fullPin.allMatches(line.text)) {
+      final digits = m[0]!.replaceAll(RegExp(r'\D'), '');
+      final score = (detectCarrierByPin(digits) != null ? 2 : 0) + (single ? 1 : 0);
+      if (score > bestScore) {
+        bestScore = score;
+        best = OcrLine(digits, line.confidence);
+      }
+    }
+  }
+  if (best != null) return best;
+
+  OcrLine partial = const OcrLine('');
+  var most = 0;
+  for (final l in norm) {
+    for (final m in _partialPin.allMatches(l.text)) {
+      final digits = m[0]!.replaceAll(RegExp(r'\D'), '');
+      if (digits.length > most) {
+        most = digits.length;
+        partial = OcrLine(digits, l.confidence);
+      }
+    }
+  }
+  return partial;
+}
+
 /// Builds a [ScannedCard] from recognised text. Never invents digits: anything
 /// shorter than 16 digits is flagged for review, and missing positions get 0% confidence.
 ///
@@ -31,6 +111,8 @@ ScannedCard parsePinText(
   } else {
     found = digitsOnly.length > kPinLength ? digitsOnly.substring(0, kPinLength) : digitsOnly;
   }
+  // Digits gathered from scattered numbers are only a guess: never verified without a check.
+  final clearMatch = match16 != null || matchGrouped != null;
 
   final conf = confidence?.clamp(0, 100);
   var status = CardStatus.success;
@@ -41,6 +123,9 @@ ScannedCard parsePinText(
   } else if (found.length < kPinLength) {
     status = CardStatus.warning;
     error = 'Only ${found.length} of $kPinLength digits were read. Fill in the missing digits before dialing.';
+  } else if (!clearMatch) {
+    status = CardStatus.warning;
+    error = "Couldn't find a clear 16-digit PIN. Check every digit before dialing.";
   } else if (conf != null && conf < 80) {
     status = CardStatus.warning;
     error = 'Low read confidence. Check every digit before dialing.';

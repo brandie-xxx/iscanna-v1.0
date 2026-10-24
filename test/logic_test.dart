@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iscanna/data/carriers.dart';
@@ -97,10 +98,61 @@ void main() {
       expect(fixed.digits.map((d) => d.index), List.generate(16, (i) => i));
     });
 
+    test('digits gathered from scattered numbers are never verified', () {
+      final card = parsePinText('Serial 40226224 Batch 0582156199', fallbackFormat: netOne, confidence: 99);
+      expect(card.rawPin.length, 16);
+      expect(card.status, CardStatus.warning);
+      expect(card.canDial, isFalse);
+    });
+
     test('switching carrier keeps label and code in agreement', () {
       final card = switchCarrier(parsePinText('4022622405821561', fallbackFormat: netOne), econet);
       expect(card.carrierName, 'Econet');
       expect(card.wrappedPin, '*121*4022622405821561#');
+    });
+  });
+
+  group('pickPinText', () {
+    test('finds the PIN line among other card text', () {
+      final pick = pickPinText(const [
+        OcrLine('NetOne recharge \$5', 99),
+        OcrLine('Serial No 0012345678', 98),
+        OcrLine('4022 6224 0582 1561', 91),
+        OcrLine('Valid until 2027', 99),
+      ]);
+      expect(pick.text, '4022622405821561');
+      expect(pick.confidence, 91);
+    });
+
+    test('fixes letters read in place of digits inside numbers, not in words', () {
+      expect(normalizeDigits('4O22 6Z24 O582 l56I'), '4022 6224 0582 1561');
+      expect(normalizeDigits('Scratch to reveal PIN'), 'Scratch to reveal PIN');
+      expect(pickPinText(const [OcrLine('PIN: 3630 l466 82ll 3Z74')]).text, '3630146682113274');
+    });
+
+    test('accepts grouping with dots, dashes or double spaces', () {
+      expect(pickPinText(const [OcrLine('4022-6224-0582-1561')]).text, '4022622405821561');
+      expect(pickPinText(const [OcrLine('3630.1466.8211.3274')]).text, '3630146682113274');
+      expect(pickPinText(const [OcrLine('4022  6224  0582  1561')]).text, '4022622405821561');
+    });
+
+    test('does not take 16 digits out of a longer number', () {
+      expect(pickPinText(const [OcrLine('12345678901234567890')]).text, isNot(hasLength(16)));
+    });
+
+    test('joins a PIN split over two lines', () {
+      expect(pickPinText(const [OcrLine('3630 1466', 90), OcrLine('8211 3274', 80)]).text, '3630146682113274');
+      expect(pickPinText(const [OcrLine('3630 1466', 90), OcrLine('8211 3274', 80)]).confidence, 80);
+    });
+
+    test('prefers a known carrier prefix over another 16-digit number', () {
+      final pick = pickPinText(const [OcrLine('1111 2222 3333 4444'), OcrLine('3630 1466 8211 3274')]);
+      expect(pick.text, '3630146682113274');
+    });
+
+    test('falls back to the longest partial run, or nothing', () {
+      expect(pickPinText(const [OcrLine('Exp 2027'), OcrLine('4022 6224 05')]).text, '4022622405');
+      expect(pickPinText(const [OcrLine('Scratch here'), OcrLine('Exp 2027')]).text, '');
     });
   });
 
@@ -214,13 +266,40 @@ void main() {
       expect(app.card?.carrierName, 'Econet');
     });
 
-    test('rescan reads the current photo again', () async {
+    test('Scan Again discards the photo but keeps the last result until the next scan', () async {
       await app.scanPhoto('econet.jpg');
-      final first = app.card!.id;
-      await app.rescan();
-      expect(app.previewPath, 'econet.jpg');
+      app.discardPhoto();
+      expect(app.previewPath, isNull);
       expect(app.card?.carrierName, 'Econet');
-      expect(app.card?.id, isNot(first));
+      expect(app.isScanning, isFalse);
+    });
+
+    test('replaced and discarded temporary photos are deleted from the cache', () async {
+      final dir = Directory.systemTemp.createTempSync('iscanna_test');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final first = File('${dir.path}/first.jpg')..writeAsStringSync('x');
+      final second = File('${dir.path}/second.jpg')..writeAsStringSync('x');
+      ocr.results[first.path] = const OcrResult('4022 6224 0582 1561', 95);
+      ocr.results[second.path] = const OcrResult('3630 1466 8211 3274', 95);
+
+      await app.scanPhoto(first.path);
+      await app.scanPhoto(second.path);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(first.existsSync(), isFalse, reason: 'replaced by the new capture');
+      expect(second.existsSync(), isTrue, reason: 'still on screen');
+
+      app.discardPhoto();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(second.existsSync(), isFalse, reason: 'discarded by Scan Again');
+    });
+
+    test('a read still in flight for a discarded photo is ignored', () async {
+      final pending = app.scanPhoto('slow.jpg');
+      app.discardPhoto();
+      ocr.pending['slow.jpg']!.complete(const OcrResult('3630 1466 8211 3274', 95));
+      await pending;
+      expect(app.card, isNull);
+      expect(app.isScanning, isFalse);
     });
 
     test('opening the camera clears the preview but keeps the result', () async {
