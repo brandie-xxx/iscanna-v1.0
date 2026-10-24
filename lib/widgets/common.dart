@@ -35,7 +35,7 @@ class BrandMark extends StatelessWidget {
                 ),
               ],
             ),
-            style: TextStyle(fontFamily: kFontFamily, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.4),
+            style: TextStyle(fontFamily: kFontFamily, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: -0.4),
           ),
         ],
       ),
@@ -51,7 +51,7 @@ class GroupedSection extends StatelessWidget {
     this.header,
     this.headerTrailing,
     this.footer,
-    this.padding = const EdgeInsets.all(AppSpace.lg),
+    this.padding = const EdgeInsets.all(AppSpace.xl),
   });
 
   final Widget child;
@@ -67,7 +67,7 @@ class GroupedSection extends StatelessWidget {
       children: [
         if (header != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.xs, AppSpace.sm),
+            padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.xs, AppSpace.md),
             child: Row(
               children: [
                 Expanded(child: Text(header!, style: AppText.sectionHeader)),
@@ -86,7 +86,7 @@ class GroupedSection extends StatelessWidget {
         ),
         if (footer != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.sm, AppSpace.lg, 0),
+            padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, 0),
             child: Text(footer!, style: AppText.footnote),
           ),
       ],
@@ -164,9 +164,9 @@ class _PressableState extends State<Pressable> {
 enum ButtonKind { filled, tinted, gray, plain }
 
 enum ButtonSize {
-  large(52, 16),
-  medium(44, 15),
-  small(34, 14);
+  large(50, 15),
+  medium(44, 14),
+  small(34, 13);
 
   const ButtonSize(this.height, this.fontSize);
   final double height;
@@ -347,7 +347,7 @@ class StatusPill extends StatelessWidget {
               child: Text(
                 label,
                 maxLines: 1,
-                style: TextStyle(fontFamily: kFontFamily, fontSize: 12.5, fontWeight: FontWeight.w600, color: color),
+                style: TextStyle(fontFamily: kFontFamily, fontSize: 11.5, fontWeight: FontWeight.w600, color: color),
               ),
             ),
           ),
@@ -373,7 +373,7 @@ class Capsule extends StatelessWidget {
         maxLines: 1,
         style: const TextStyle(
           fontFamily: kFontFamily,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
           color: AppColors.textSecondary,
         ),
@@ -419,7 +419,7 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
                       title,
                       style: TextStyle(
                         fontFamily: kButtonFamily,
-                        fontSize: 15,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         color: key == value ? AppColors.textPrimary : AppColors.textSecondary,
                       ),
@@ -432,7 +432,7 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
                           fontFamily: kDisplayFamily,
                           fontWeight: FontWeight.w700,
                           fontFeatures: [FontFeature.tabularFigures()],
-                          fontSize: 11,
+                          fontSize: 10.5,
                           color: key == value ? AppColors.accent : AppColors.textFaint,
                         ),
                       ),
@@ -520,7 +520,7 @@ class AuthorFooter extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: kFontFamily,
                   fontWeight: FontWeight.w500,
-                  fontSize: 11.5,
+                  fontSize: 11,
                   color: AppColors.textFaint,
                 ),
               ),

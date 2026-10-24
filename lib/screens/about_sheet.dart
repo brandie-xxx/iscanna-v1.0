@@ -138,7 +138,7 @@ class _Hero extends StatelessWidget {
               ),
             ],
           ),
-          style: TextStyle(fontFamily: kFontFamily, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.6),
+          style: TextStyle(fontFamily: kFontFamily, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.6),
         ),
         const SizedBox(height: AppSpace.xs),
         const Text('Scan a recharge card and dial it in one tap.', textAlign: TextAlign.center, style: AppText.callout),
@@ -166,14 +166,14 @@ class _Step extends StatelessWidget {
             height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), shape: BoxShape.circle),
-            child: Text('$number', style: AppText.code.copyWith(fontSize: 15, color: AppColors.accent)),
+            child: Text('$number', style: AppText.code.copyWith(fontSize: 13.5, color: AppColors.accent)),
           ),
           const SizedBox(width: AppSpace.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppText.headline.copyWith(fontSize: 16)),
+                Text(title, style: AppText.headline.copyWith(fontSize: 14)),
                 const SizedBox(height: 2),
                 Text(text, style: AppText.footnote),
               ],

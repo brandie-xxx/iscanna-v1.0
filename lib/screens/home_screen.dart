@@ -139,7 +139,7 @@ class _TabBar extends StatelessWidget {
                     onTap: () => onSelect(AppTab.scanner),
                   ),
                   _TabItem(
-                    icon: LucideIcons.layers,
+                    icon: LucideIcons.menu,
                     label: 'Batch',
                     badge: batchEnabled ? batchCount : 0,
                     selected: current == AppTab.batch,
@@ -224,7 +224,7 @@ class _TabItem extends StatelessWidget {
                           badge > 99 ? '99+' : '$badge',
                           style: const TextStyle(
                             fontFamily: kButtonFamily,
-                            fontSize: 10.5,
+                            fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: AppColors.background,
                           ),
@@ -238,7 +238,7 @@ class _TabItem extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontFamily: kButtonFamily,
-                  fontSize: 11.5,
+                  fontSize: 10.5,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: color,
                 ),

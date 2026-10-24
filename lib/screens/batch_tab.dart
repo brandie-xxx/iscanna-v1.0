@@ -115,7 +115,7 @@ class _BatchTabState extends State<BatchTab> {
   Future<void> _showActions(ScannedCard card) async {
     unawaited(HapticFeedback.selectionClick());
     if (!mounted) return;
-    const action = TextStyle(fontFamily: kButtonFamily, fontSize: 18, fontWeight: FontWeight.w600);
+    const action = TextStyle(fontFamily: kButtonFamily, fontSize: 16.5, fontWeight: FontWeight.w600);
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
@@ -125,13 +125,13 @@ class _BatchTabState extends State<BatchTab> {
             fontFamily: kDisplayFamily,
             fontWeight: FontWeight.w700,
             fontFeatures: [FontFeature.tabularFigures()],
-            fontSize: 15,
+            fontSize: 14,
             letterSpacing: 0.5,
           ),
         ),
         message: Text(
           '${card.carrierName} · ${card.formattedPin}',
-          style: const TextStyle(fontFamily: kFontFamily, fontSize: 13),
+          style: const TextStyle(fontFamily: kFontFamily, fontSize: 12.5),
         ),
         actions: [
           if (card.canDial)
@@ -169,7 +169,7 @@ class _BatchTabState extends State<BatchTab> {
           onPressed: () => Navigator.pop(ctx),
           child: const Text(
             'Cancel',
-            style: TextStyle(fontFamily: kButtonFamily, fontSize: 18, fontWeight: FontWeight.w700),
+            style: TextStyle(fontFamily: kButtonFamily, fontSize: 16.5, fontWeight: FontWeight.w700),
           ),
         ),
       ),
@@ -195,7 +195,7 @@ class _BatchTabState extends State<BatchTab> {
                     'Clear',
                     style: TextStyle(
                       fontFamily: kButtonFamily,
-                      fontSize: 17,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w700,
                       color: AppColors.danger,
                     ),
@@ -203,7 +203,7 @@ class _BatchTabState extends State<BatchTab> {
                 ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(AppSpace.gutter, AppSpace.sm, AppSpace.gutter, 0),
+          padding: const EdgeInsets.fromLTRB(AppSpace.gutter, AppSpace.lg, AppSpace.gutter, 0),
           sliver: SliverList.list(
             children: [
               if (cards.isEmpty)
@@ -222,13 +222,12 @@ class _BatchTabState extends State<BatchTab> {
                     child: Column(
                       children: [
                         for (var i = 0; i < cards.length; i++) ...[
-                          if (i > 0) const Hairline(indent: 60),
+                          if (i > 0) const Hairline(indent: 64),
                           _BatchRow(
                             key: ValueKey(cards[i].id),
                             index: i,
                             card: cards[i],
                             onTap: () => _showActions(cards[i]),
-                            onDial: () => widget.onDial(cards[i]),
                             onRemove: () => _remove(cards[i]),
                           ),
                         ],
@@ -236,52 +235,51 @@ class _BatchTabState extends State<BatchTab> {
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpace.xxl),
-                GroupedSection(
-                  header: 'Export',
-                  footer: 'Export opens the share sheet so you can save or send the file.',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SegmentedPicker<ExportFormat>(
-                        value: _format,
-                        segments: {for (final f in ExportFormat.values) f: (f.extension.toUpperCase(), null)},
-                        onChanged: (f) => setState(() => _format = f),
+                const SizedBox(height: AppSpace.section),
+                // Export sits directly on the page: no card, just the format row and actions.
+                const Padding(
+                  padding: EdgeInsets.only(left: AppSpace.lg, bottom: AppSpace.md),
+                  child: Text('Export', style: AppText.sectionHeader),
+                ),
+                _FormatRow(value: _format, onChanged: (f) => setState(() => _format = f)),
+                const SizedBox(height: AppSpace.xl),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: _copiedAll ? 'Copied' : 'Copy All',
+                        icon: _copiedAll ? LucideIcons.check : LucideIcons.copy,
+                        kind: _copiedAll ? ButtonKind.tinted : ButtonKind.gray,
+                        expand: true,
+                        onPressed: _copyAll,
                       ),
-                      const SizedBox(height: AppSpace.lg),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppButton(
-                              label: _copiedAll ? 'Copied' : 'Copy All',
-                              icon: _copiedAll ? LucideIcons.check : LucideIcons.copy,
-                              kind: _copiedAll ? ButtonKind.tinted : ButtonKind.gray,
-                              expand: true,
-                              onPressed: _copyAll,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpace.sm),
-                          Expanded(
-                            child: Builder(
-                              builder: (btnContext) => AppButton(
-                                label: _exporting ? 'Exporting…' : 'Export ${_format.extension.toUpperCase()}',
-                                icon: LucideIcons.share,
-                                kind: ButtonKind.filled,
-                                expand: true,
-                                onPressed: _exporting
-                                    ? null
-                                    : () {
-                                        // iPad share sheets need an anchor rect.
-                                        final box = btnContext.findRenderObject() as RenderBox?;
-                                        final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
-                                        _export(origin);
-                                      },
-                              ),
-                            ),
-                          ),
-                        ],
+                    ),
+                    const SizedBox(width: AppSpace.md),
+                    Expanded(
+                      child: Builder(
+                        builder: (btnContext) => AppButton(
+                          label: _exporting ? 'Exporting…' : 'Export ${_format.extension.toUpperCase()}',
+                          icon: LucideIcons.share,
+                          kind: ButtonKind.filled,
+                          expand: true,
+                          onPressed: _exporting
+                              ? null
+                              : () {
+                                  // iPad share sheets need an anchor rect.
+                                  final box = btnContext.findRenderObject() as RenderBox?;
+                                  final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+                                  _export(origin);
+                                },
+                        ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, 0),
+                  child: Text(
+                    'Export opens the share sheet so you can save or send the file.',
+                    style: AppText.footnote,
                   ),
                 ),
               ],
@@ -305,19 +303,11 @@ class _BatchTabState extends State<BatchTab> {
 }
 
 class _BatchRow extends StatelessWidget {
-  const _BatchRow({
-    super.key,
-    required this.index,
-    required this.card,
-    required this.onTap,
-    required this.onDial,
-    required this.onRemove,
-  });
+  const _BatchRow({super.key, required this.index, required this.card, required this.onTap, required this.onRemove});
 
   final int index;
   final ScannedCard card;
   final VoidCallback onTap;
-  final VoidCallback onDial;
   final VoidCallback onRemove;
 
   @override
@@ -339,7 +329,7 @@ class _BatchRow extends StatelessWidget {
               'Delete',
               style: TextStyle(
                 fontFamily: kButtonFamily,
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
@@ -357,7 +347,7 @@ class _BatchRow extends StatelessWidget {
           child: ColoredBox(
             color: AppColors.panel,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.md, AppSpace.md),
+              padding: const EdgeInsets.fromLTRB(AppSpace.xl, AppSpace.lg, AppSpace.xl, AppSpace.lg),
               child: Row(
                 children: [
                   Container(
@@ -376,7 +366,7 @@ class _BatchRow extends StatelessWidget {
                         fontFamily: kDisplayFamily,
                         fontWeight: FontWeight.w700,
                         fontFeatures: [FontFeature.tabularFigures()],
-                        fontSize: 11,
+                        fontSize: 10.5,
                         color: card.canDial ? AppColors.accent : AppColors.warning,
                       ),
                     ),
@@ -399,7 +389,7 @@ class _BatchRow extends StatelessWidget {
                                 fontFamily: kDisplayFamily,
                                 fontWeight: FontWeight.w700,
                                 fontFeatures: [FontFeature.tabularFigures()],
-                                fontSize: 17,
+                                fontSize: 15,
                                 color: AppColors.textPrimary,
                                 letterSpacing: 0.4,
                               ),
@@ -426,15 +416,6 @@ class _BatchRow extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: AppSpace.sm),
-                  IconCircleButton(
-                    icon: LucideIcons.phoneCall,
-                    label: card.canDial ? 'Dial ${card.carrierName}' : 'Fix PIN before dialing',
-                    size: 38,
-                    color: AppColors.accent,
-                    background: AppColors.accent.withValues(alpha: 0.12),
-                    onPressed: card.canDial ? onDial : null,
                   ),
                 ],
               ),
@@ -467,8 +448,55 @@ class _EmptyBatch extends StatelessWidget {
               style: AppText.callout,
             ),
           ),
-          const SizedBox(height: AppSpace.xl),
+          const SizedBox(height: AppSpace.xxl),
           AppButton(label: 'Start Scanning', icon: LucideIcons.scanLine, kind: ButtonKind.tinted, onPressed: onScan),
+        ],
+      ),
+    );
+  }
+}
+
+/// Export format choice: plain labels divided by thin separators, no surrounding box.
+class _FormatRow extends StatelessWidget {
+  const _FormatRow({required this.value, required this.onChanged});
+
+  final ExportFormat value;
+  final ValueChanged<ExportFormat> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const formats = ExportFormat.values;
+    return SizedBox(
+      height: kMinTouchTarget,
+      child: Row(
+        children: [
+          for (var i = 0; i < formats.length; i++) ...[
+            if (i > 0) const SizedBox(width: 1, height: 18, child: ColoredBox(color: AppColors.borderStrong)),
+            Expanded(
+              child: Semantics(
+                inMutuallyExclusiveGroup: true,
+                checked: formats[i] == value,
+                button: true,
+                label: 'Export as ${formats[i].extension}',
+                excludeSemantics: true,
+                child: Pressable(
+                  onTap: formats[i] == value ? null : () => onChanged(formats[i]),
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 150),
+                      style: TextStyle(
+                        fontFamily: kButtonFamily,
+                        fontSize: 14,
+                        fontWeight: formats[i] == value ? FontWeight.w800 : FontWeight.w600,
+                        color: formats[i] == value ? AppColors.accent : AppColors.textMuted,
+                      ),
+                      child: Text(formats[i].extension.toUpperCase()),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

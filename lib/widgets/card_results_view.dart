@@ -96,18 +96,18 @@ class _CardResultsViewState extends State<CardResultsView> {
                 const SizedBox(width: AppSpace.sm),
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(format.pattern, style: AppText.readout.copyWith(color: AppColors.textMuted)),
+                  child: Text(format.pattern, style: AppText.code.copyWith(fontSize: 12, color: AppColors.textMuted)),
                 ),
               ],
             ],
           ),
           if (card.errorMessage != null && !card.canDial) ...[
-            const SizedBox(height: AppSpace.md),
+            const SizedBox(height: AppSpace.lg),
             _Notice(message: card.errorMessage!),
           ],
-          const SizedBox(height: AppSpace.lg),
+          const SizedBox(height: AppSpace.xl),
           const Text('USSD code', style: AppText.sectionHeader),
-          const SizedBox(height: AppSpace.sm),
+          const SizedBox(height: AppSpace.md),
           Semantics(
             label: 'USSD code ${card.wrappedPin.split('').join(' ')}',
             excludeSemantics: true,
@@ -124,7 +124,7 @@ class _CardResultsViewState extends State<CardResultsView> {
                     fontFamily: kDisplayFamily,
                     fontWeight: FontWeight.w700,
                     fontFeatures: [FontFeature.tabularFigures()],
-                    fontSize: 28,
+                    fontSize: 24,
                     letterSpacing: 1,
                     color: card.canDial ? AppColors.accent : AppColors.textSecondary,
                     shadows: card.canDial
@@ -135,9 +135,9 @@ class _CardResultsViewState extends State<CardResultsView> {
               ),
             ),
           ),
-          const SizedBox(height: AppSpace.lg),
+          const SizedBox(height: AppSpace.xl),
           const Hairline(),
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.lg),
           Row(
             children: [
               Expanded(
@@ -168,7 +168,7 @@ class _CardResultsViewState extends State<CardResultsView> {
               ),
             ],
           ),
-          const SizedBox(height: AppSpace.xl),
+          const SizedBox(height: AppSpace.xxl),
           AppButton(
             label: card.canDial ? 'Dial ${card.carrierName}' : 'Fix PIN to Dial',
             icon: LucideIcons.phoneCall,
@@ -186,7 +186,7 @@ class _CardResultsViewState extends State<CardResultsView> {
               style: AppText.caption,
             ),
           ],
-          const SizedBox(height: AppSpace.sm),
+          const SizedBox(height: AppSpace.md),
           Row(
             children: [
               Expanded(
@@ -200,7 +200,7 @@ class _CardResultsViewState extends State<CardResultsView> {
               ),
               // Batch actions only exist once Batch is on (target of 2 or more).
               if (widget.controller.batchEnabled) ...[
-                const SizedBox(width: AppSpace.sm),
+                const SizedBox(width: AppSpace.md),
                 Expanded(
                   child: AppButton(
                     label: _added ? 'Added' : 'Add to Batch',
@@ -251,7 +251,7 @@ class _PinText extends StatelessWidget {
         fontFamily: kDisplayFamily,
         fontWeight: FontWeight.w700,
         fontFeatures: [FontFeature.tabularFigures()],
-        fontSize: 18,
+        fontSize: 16,
         color: AppColors.textPrimary,
         letterSpacing: 1,
       ),
@@ -310,9 +310,9 @@ class _EmptyResult extends StatelessWidget {
             size: 28,
             color: failed ? AppColors.warning : AppColors.textFaint,
           ),
-          const SizedBox(height: AppSpace.md),
-          Text(failed ? 'Scan Failed' : 'No Card Yet', style: AppText.headline.copyWith(fontSize: 16)),
-          const SizedBox(height: AppSpace.xs),
+          const SizedBox(height: AppSpace.lg),
+          Text(failed ? 'Scan Failed' : 'No Card Yet', style: AppText.headline.copyWith(fontSize: 14.5)),
+          const SizedBox(height: AppSpace.sm),
           Semantics(
             liveRegion: failed,
             child: Text(

@@ -159,7 +159,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _viewfinder(app),
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.lg),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),
             child: KeyedSubtree(key: ValueKey(live), child: _controls(app)),
@@ -274,7 +274,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
           expand: true,
           onPressed: _starting ? null : _startCamera,
         ),
-        const SizedBox(height: AppSpace.sm),
+        const SizedBox(height: AppSpace.md),
         Row(
           children: [
             Expanded(
@@ -286,7 +286,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
               ),
             ),
             if (hasPhoto) ...[
-              const SizedBox(width: AppSpace.sm),
+              const SizedBox(width: AppSpace.md),
               Expanded(
                 child: AppButton(
                   label: 'Scan Again',
@@ -568,7 +568,7 @@ class _EmptyViewfinder extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: kFontFamily,
-                      fontSize: 17,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
@@ -583,7 +583,7 @@ class _EmptyViewfinder extends StatelessWidget {
           child: Center(
             child: Text(
               '0000  0000  0000  0000',
-              style: AppText.code.copyWith(fontSize: 18, color: AppColors.textFaint.withValues(alpha: 0.6)),
+              style: AppText.code.copyWith(fontSize: 16, color: AppColors.textFaint.withValues(alpha: 0.6)),
             ),
           ),
         ),

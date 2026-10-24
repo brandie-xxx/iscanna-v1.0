@@ -37,11 +37,14 @@ abstract final class AppSpace {
   static const md = 12.0;
   static const lg = 16.0;
   static const xl = 20.0;
-  static const xxl = 28.0;
-  static const xxxl = 40.0;
+  static const xxl = 32.0;
+  static const xxxl = 44.0;
+
+  /// Gap between top-level sections on a screen.
+  static const section = 40.0;
 
   /// Horizontal page margin.
-  static const gutter = 16.0;
+  static const gutter = 20.0;
 }
 
 /// Minimum touch target (Apple HIG: 44pt).
@@ -62,21 +65,21 @@ abstract final class AppText {
   /// Screen title (centred, collapses into the navigation bar).
   static const largeTitle = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.6,
     color: AppColors.textPrimary,
   );
   static const headline = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.3,
     color: AppColors.textPrimary,
   );
   static const body = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 16,
+    fontSize: 14.5,
     fontWeight: FontWeight.w500,
     height: 1.35,
     letterSpacing: -0.2,
@@ -84,7 +87,7 @@ abstract final class AppText {
   );
   static const callout = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 15,
+    fontSize: 13.5,
     fontWeight: FontWeight.w400,
     height: 1.45,
     letterSpacing: -0.1,
@@ -92,14 +95,14 @@ abstract final class AppText {
   );
   static const footnote = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 13.5,
+    fontSize: 12.5,
     fontWeight: FontWeight.w400,
     height: 1.4,
     color: AppColors.textMuted,
   );
   static const caption = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: FontWeight.w400,
     height: 1.3,
     color: AppColors.textMuted,
@@ -108,7 +111,7 @@ abstract final class AppText {
   /// Grouped-section header, in standard casing.
   static const sectionHeader = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 13.5,
+    fontSize: 12.5,
     fontWeight: FontWeight.w600,
     letterSpacing: -0.1,
     color: AppColors.textMuted,
@@ -117,7 +120,7 @@ abstract final class AppText {
   /// Small accent label for HUD hints and counters.
   static const readout = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: FontWeight.w600,
     color: AppColors.accent,
   );
@@ -131,7 +134,7 @@ abstract final class AppText {
 
   static const button = TextStyle(
     fontFamily: kButtonFamily,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.1,
   );
@@ -174,7 +177,7 @@ ThemeData buildAppTheme() {
       backgroundColor: AppColors.surface,
       elevation: 0,
       insetPadding: const EdgeInsets.fromLTRB(AppSpace.gutter, 0, AppSpace.gutter, AppSpace.md),
-      contentTextStyle: AppText.body.copyWith(fontSize: 14, color: AppColors.textPrimary),
+      contentTextStyle: AppText.body.copyWith(fontSize: 13.5, color: AppColors.textPrimary),
       actionTextColor: AppColors.accent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.control),
@@ -198,10 +201,10 @@ const CupertinoThemeData kCupertinoTheme = CupertinoThemeData(
   textTheme: CupertinoTextThemeData(
     primaryColor: AppColors.accent,
     textStyle: AppText.body,
-    actionTextStyle: TextStyle(fontFamily: kButtonFamily, fontSize: 17, color: AppColors.accent),
+    actionTextStyle: TextStyle(fontFamily: kButtonFamily, fontSize: 15.5, color: AppColors.accent),
     navTitleTextStyle: AppText.headline,
     navLargeTitleTextStyle: AppText.largeTitle,
-    navActionTextStyle: TextStyle(fontFamily: kButtonFamily, fontSize: 17, color: AppColors.accent),
+    navActionTextStyle: TextStyle(fontFamily: kButtonFamily, fontSize: 15.5, color: AppColors.accent),
   ),
 );
 

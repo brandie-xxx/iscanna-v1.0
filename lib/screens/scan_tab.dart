@@ -36,11 +36,11 @@ class ScanTab extends StatelessWidget {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(AppSpace.gutter, AppSpace.sm, AppSpace.gutter, 0),
+          padding: const EdgeInsets.fromLTRB(AppSpace.gutter, AppSpace.lg, AppSpace.gutter, 0),
           sliver: SliverList.list(
             children: [
               const Padding(
-                padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
+                padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.md),
                 child: Text('Carrier', style: AppText.sectionHeader),
               ),
               SegmentedPicker<String>(
@@ -48,11 +48,11 @@ class ScanTab extends StatelessWidget {
                 segments: {for (final f in kCarrierFormats) f.id: (f.name, f.prefix)},
                 onChanged: (id) => controller.selectFormat(findFormatById(id)!),
               ),
-              const SizedBox(height: AppSpace.xxl),
+              const SizedBox(height: AppSpace.section),
               CameraCapture(controller: controller),
-              const SizedBox(height: AppSpace.xxl),
+              const SizedBox(height: AppSpace.section),
               _BatchTargetSection(controller: controller),
-              const SizedBox(height: AppSpace.xxl),
+              const SizedBox(height: AppSpace.section),
               CardResultsView(controller: controller, onDial: onDial),
             ],
           ),
@@ -98,7 +98,7 @@ class _BatchTargetSection extends StatelessWidget {
                 '$target',
                 style: const TextStyle(
                   fontFamily: kButtonFamily,
-                  fontSize: 17,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: AppColors.accent,
                   fontFeatures: [FontFeature.tabularFigures()],
@@ -127,7 +127,7 @@ class _BatchTargetSection extends StatelessWidget {
                             Text('${(fraction * 100).round()}%', style: AppText.readout),
                           ],
                         ),
-                        const SizedBox(height: AppSpace.sm),
+                        const SizedBox(height: AppSpace.md),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(3),
                           child: TweenAnimationBuilder<double>(
