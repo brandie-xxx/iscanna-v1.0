@@ -7,6 +7,7 @@ import 'package:iscanna/main.dart';
 import 'package:iscanna/services/ocr_service.dart';
 import 'package:iscanna/state/app_controller.dart';
 import 'package:iscanna/theme/app_theme.dart';
+import 'package:iscanna/widgets/common.dart';
 
 /// Returns canned OCR text per photo path.
 class _FakeOcr implements OcrService {
@@ -187,6 +188,7 @@ void main() {
     app.selectTab(AppTab.batch);
     await tester.pumpAndSettle();
     expect(find.text('No Cards Yet'), findsOneWidget);
+    expect(find.text('Start Scanning…'), findsOneWidget);
     final credit = tester.getRect(find.text('*exxstatix'));
     expect(credit.bottom, greaterThan(844 * 0.75));
   });
@@ -232,16 +234,37 @@ void main() {
     expect(tester.widget<Text>(find.text('Cards to scan')).style?.color, AppPalette.dark.textBody);
   });
 
-  testWidgets('Add to Batch reads Added once the card is queued', (tester) async {
+  testWidgets('Add to Batch folds into a check once the card is queued', (tester) async {
     final app = await _pumpApp(tester);
     app.incrementTarget();
     await _scan(tester, app, '/econet.jpg'); // verified scans are queued automatically
-    await _scrollTo(tester, find.text('Added'));
+    await _scrollTo(tester, find.bySemanticsLabel('Added to batch'));
     expect(find.text('Add to Batch'), findsNothing);
 
+    // Removing the card unfolds it again, and tapping re-adds it with the fold.
     app.removeFromBatch(app.batch.single.id);
     await tester.pumpAndSettle();
     expect(find.text('Add to Batch'), findsOneWidget);
+    expect(find.bySemanticsLabel('Added to batch'), findsNothing);
+    await tester.tap(find.text('Add to Batch'));
+    await tester.pumpAndSettle();
+    expect(app.batch, hasLength(1));
+    expect(find.bySemanticsLabel('Added to batch'), findsOneWidget);
     await tester.pumpAndSettle(const Duration(seconds: 4));
+  });
+
+  testWidgets('result shows carrier on the left and status on the right, without the dial pattern', (tester) async {
+    final app = await _pumpApp(tester);
+    await _scan(tester, app, '/econet.jpg');
+    await _scrollTo(tester, find.text('Verified'));
+    expect(find.text('*121*PIN#'), findsNothing);
+    final carrier = tester.getRect(find.text('Econet').last);
+    final status = tester.getRect(find.text('Verified'));
+    expect(status.left, greaterThan(carrier.right));
+    expect(carrier.center.dy, closeTo(status.center.dy, 2));
+    // The pill sits flush with the card's right edge, where the dial pattern used to be (Edit is right-aligned too).
+    final pill = find.ancestor(of: find.text('Verified'), matching: find.byType(StatusPill));
+    final edit = find.ancestor(of: find.text('Edit'), matching: find.byType(AppButton));
+    expect(tester.getRect(pill).right, closeTo(tester.getRect(edit).right, 0.5));
   });
 }

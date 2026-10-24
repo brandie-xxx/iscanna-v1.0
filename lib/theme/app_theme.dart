@@ -18,6 +18,7 @@ class AppPalette {
     required this.accentPressed,
     required this.accentSoft,
     required this.onAccent,
+    required this.success,
     required this.warning,
     required this.danger,
     required this.textPrimary,
@@ -43,6 +44,9 @@ class AppPalette {
 
   /// Text and icons on a filled accent background.
   final Color onAccent;
+
+  /// Confirmation, e.g. a card that is in the batch.
+  final Color success;
   final Color warning;
   final Color danger;
   final Color textPrimary;
@@ -69,6 +73,7 @@ class AppPalette {
     accentPressed: Color(0xFF0EA5E9),
     accentSoft: Color(0xFF7DD3FC),
     onAccent: Color(0xFF0D0E11),
+    success: Color(0xFF4ADE80),
     warning: Color(0xFFFBBF24),
     danger: Color(0xFFF87171),
     textPrimary: Color(0xFFF4F4F5),
@@ -94,6 +99,7 @@ class AppPalette {
     accentPressed: Color(0xFF0369A1),
     accentSoft: Color(0xFF38BDF8),
     onAccent: Color(0xFFFFFFFF),
+    success: Color(0xFF16A34A),
     warning: Color(0xFFB45309),
     danger: Color(0xFFDC2626),
     textPrimary: Color(0xFF0B0C0F),
@@ -123,6 +129,7 @@ abstract final class AppColors {
   static Color get accentPressed => palette.accentPressed;
   static Color get accentSoft => palette.accentSoft;
   static Color get onAccent => palette.onAccent;
+  static Color get success => palette.success;
   static Color get warning => palette.warning;
   static Color get danger => palette.danger;
   static Color get textPrimary => palette.textPrimary;

@@ -1,7 +1,8 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../data/carriers.dart';
 import '../models/models.dart';
 import '../services/dialer.dart';
 import '../state/app_controller.dart';
@@ -63,7 +64,6 @@ class _CardResultsViewState extends State<CardResultsView> {
   }
 
   Widget _result(ScannedCard card) {
-    final format = findFormatById(card.carrierId);
     final queued = widget.controller.isQueued(card);
 
     return GroupedSection(
@@ -71,25 +71,13 @@ class _CardResultsViewState extends State<CardResultsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Carrier on the left, status on the right.
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Status and carrier wrap onto a second line rather than overflow on narrow screens.
-              Expanded(
-                child: Wrap(
-                  spacing: AppSpace.sm,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [StatusPill(card.status), Capsule(card.carrierName)],
-                ),
-              ),
-              if (format != null) ...[
-                const SizedBox(width: AppSpace.sm),
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(format.pattern, style: AppText.code.copyWith(fontSize: 12, color: AppColors.textMuted)),
-                ),
-              ],
+              Flexible(child: Capsule(card.carrierName)),
+              const SizedBox(width: AppSpace.sm),
+              StatusPill(card.status),
             ],
           ),
           if (card.errorMessage != null && !card.canDial) ...[
@@ -178,38 +166,147 @@ class _CardResultsViewState extends State<CardResultsView> {
             ),
           ],
           const SizedBox(height: AppSpace.md),
-          Row(
-            children: [
-              Expanded(
-                child: AppButton(
-                  label: _copied ? 'Copied' : 'Copy Code',
-                  icon: _copied ? LucideIcons.check : LucideIcons.copy,
-                  kind: _copied ? ButtonKind.tinted : ButtonKind.gray,
-                  expand: true,
-                  onPressed: () => _copy(card),
-                ),
-              ),
-              const SizedBox(width: AppSpace.md),
-              // Always shown; greyed out until Batch is on (target of 2 or more), and a tap then says how.
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: widget.controller.batchEnabled
-                      ? null
-                      : () => showToast(context, 'Set Cards to scan to 2 or more to use Batch.'),
-                  child: AppButton(
-                    // Reads "Added" while this card is in the batch, whether queued by hand or automatically.
-                    label: queued ? 'Added' : 'Add to Batch',
-                    icon: queued ? LucideIcons.check : LucideIcons.listPlus,
-                    kind: queued ? ButtonKind.tinted : ButtonKind.gray,
-                    expand: true,
-                    onPressed: widget.controller.batchEnabled ? () => widget.controller.addToBatch(card) : null,
-                  ),
-                ),
-              ),
-            ],
+          // Copy Code and Add to Batch share the row. Once the card is in the batch, Add to Batch folds
+          // into a round green check and Copy Code widens to take the space.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = AppSpace.md;
+              final height = ButtonSize.medium.height;
+              final half = (constraints.maxWidth - gap) / 2;
+              return TweenAnimationBuilder<double>(
+                tween: Tween(end: queued ? 1 : 0),
+                duration: const Duration(milliseconds: 520),
+                curve: Curves.easeInOutCubicEmphasized,
+                builder: (context, t, _) {
+                  final addWidth = lerpDouble(half, height, t)!;
+                  return Row(
+                    children: [
+                      SizedBox(
+                        width: constraints.maxWidth - gap - addWidth,
+                        child: AppButton(
+                          label: _copied ? 'Copied' : 'Copy Code',
+                          icon: _copied ? LucideIcons.check : LucideIcons.copy,
+                          kind: _copied ? ButtonKind.tinted : ButtonKind.gray,
+                          expand: true,
+                          onPressed: () => _copy(card),
+                        ),
+                      ),
+                      const SizedBox(width: gap),
+                      SizedBox(
+                        width: addWidth,
+                        // Greyed out until Batch is on (target of 2 or more); a tap then says how.
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: queued || widget.controller.batchEnabled
+                              ? null
+                              : () => showToast(context, 'Set Cards to scan to 2 or more to use Batch.'),
+                          child: _AddToBatchButton(
+                            progress: t,
+                            fullWidth: half,
+                            enabled: widget.controller.batchEnabled,
+                            onPressed: queued ? null : () => widget.controller.addToBatch(card),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Add to Batch, folding into a round green check as [progress] runs from 0 (not queued) to 1 (queued).
+/// The label fades out in the first third of the fold as the check grows in, so the button is never empty.
+class _AddToBatchButton extends StatelessWidget {
+  const _AddToBatchButton({
+    required this.progress,
+    required this.fullWidth,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final double progress;
+
+  /// Width of the unfolded button, so the label keeps its layout while the button narrows.
+  final double fullWidth;
+
+  /// Batch is on (Cards to scan is 2 or more).
+  final bool enabled;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = progress.clamp(0.0, 1.0);
+    final height = ButtonSize.medium.height;
+    final labelOpacity = Curves.easeOut.transform((1 - t / 0.3).clamp(0.0, 1.0));
+    final checkIn = Curves.easeOutBack.transform(((t - 0.3) / 0.7).clamp(0.0, 1.0));
+    // Blend between opaque colours so the fill shifts hue cleanly instead of darkening mid-way.
+    final greenFill = Color.alphaBlend(AppColors.success.withValues(alpha: 0.16), AppColors.panel);
+    final labelColor = enabled ? AppColors.textPrimary : AppColors.textFaint;
+    final added = t > 0.5;
+
+    return Semantics(
+      button: true,
+      enabled: onPressed != null && enabled,
+      label: added ? 'Added to batch' : 'Add to Batch',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: enabled ? onPressed : null,
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: Color.lerp(AppColors.surface, greenFill, t),
+            borderRadius: BorderRadius.circular(lerpDouble(AppRadius.control, height / 2, t)!),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (labelOpacity > 0)
+                Opacity(
+                  opacity: labelOpacity,
+                  // Laid out at full width and clipped, so the label never squashes as the button folds.
+                  child: OverflowBox(
+                    minWidth: fullWidth,
+                    maxWidth: fullWidth,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(LucideIcons.listPlus, size: ButtonSize.medium.fontSize + 2, color: labelColor),
+                          const SizedBox(width: AppSpace.sm),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Add to Batch',
+                                maxLines: 1,
+                                style: AppText.button.copyWith(fontSize: ButtonSize.medium.fontSize, color: labelColor),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (checkIn > 0)
+                Opacity(
+                  opacity: checkIn.clamp(0.0, 1.0),
+                  child: Transform.scale(
+                    scale: 0.4 + 0.6 * checkIn,
+                    child: Icon(LucideIcons.check, size: 20, color: AppColors.success),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

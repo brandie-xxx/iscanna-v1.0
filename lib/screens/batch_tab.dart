@@ -449,7 +449,7 @@ class _EmptyBatch extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpace.xxl),
-          AppButton(label: 'Start Scanning', icon: LucideIcons.scanLine, kind: ButtonKind.tinted, onPressed: onScan),
+          AppButton(label: 'Start Scanning…', kind: ButtonKind.tinted, onPressed: onScan),
         ],
       ),
     );
