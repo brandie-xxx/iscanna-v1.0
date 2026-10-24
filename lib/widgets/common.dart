@@ -139,11 +139,13 @@ class _PressableState extends State<Pressable> {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = widget.onTap != null;
+    // When disabled, claim no gestures so a parent can still react to the tap.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _set(true),
-      onTapUp: (_) => _set(false),
-      onTapCancel: () => _set(false),
+      onTapDown: enabled ? (_) => _set(true) : null,
+      onTapUp: enabled ? (_) => _set(false) : null,
+      onTapCancel: enabled ? () => _set(false) : null,
       onTap: widget.onTap == null
           ? null
           : () {
