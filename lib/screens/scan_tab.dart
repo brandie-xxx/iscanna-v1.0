@@ -48,10 +48,10 @@ class ScanTab extends StatelessWidget {
                 segments: {for (final f in kCarrierFormats) f.id: (f.name, f.prefix)},
                 onChanged: (id) => controller.selectFormat(findFormatById(id)!),
               ),
+              const SizedBox(height: AppSpace.xxl),
+              _BatchTarget(controller: controller),
               const SizedBox(height: AppSpace.section),
               CameraCapture(controller: controller),
-              const SizedBox(height: AppSpace.section),
-              _BatchTargetSection(controller: controller),
               const SizedBox(height: AppSpace.section),
               CardResultsView(controller: controller, onDial: onDial),
             ],
@@ -73,80 +73,82 @@ class ScanTab extends StatelessWidget {
   }
 }
 
-/// "Cards to scan" stepper with progress; above 1, verified scans queue themselves.
-class _BatchTargetSection extends StatelessWidget {
-  const _BatchTargetSection({required this.controller});
+/// One plain line: "Cards to scan  − 2 +". At 2 or more, Batch turns on and a queue count appears.
+class _BatchTarget extends StatelessWidget {
+  const _BatchTarget({required this.controller});
 
   final AppController controller;
 
   @override
   Widget build(BuildContext context) {
     final target = controller.targetScanCount;
-    final queued = controller.batch.length;
-    final fraction = (queued / target).clamp(0.0, 1.0);
-    return GroupedSection(
-      header: 'Batch target',
-      footer: target > 1
-          ? 'Batch is on. Verified scans join the queue automatically until the target is reached.'
-          : 'Set 2 or more cards to turn on Batch and queue verified scans automatically.',
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               const Expanded(child: Text('Cards to scan', style: AppText.body)),
-              Text(
-                '$target',
-                style: const TextStyle(
-                  fontFamily: kButtonFamily,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.accent,
-                  fontFeatures: [FontFeature.tabularFigures()],
+              _RoundStep(
+                icon: LucideIcons.minus,
+                label: 'Decrease cards to scan, now $target',
+                onTap: target > 1 ? controller.decrementTarget : null,
+              ),
+              SizedBox(
+                width: 40,
+                child: Text(
+                  '$target',
+                  textAlign: TextAlign.center,
+                  style: AppText.code.copyWith(fontSize: 16, color: AppColors.textPrimary),
                 ),
               ),
-              const SizedBox(width: AppSpace.md),
-              StepperControl(
-                semanticValue: 'target $target',
-                onDecrement: target > 1 ? controller.decrementTarget : null,
-                onIncrement: controller.incrementTarget,
+              _RoundStep(
+                icon: LucideIcons.plus,
+                label: 'Increase cards to scan, now $target',
+                onTap: controller.incrementTarget,
               ),
             ],
           ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOutCubic,
-            child: target <= 1
-                ? const SizedBox(width: double.infinity)
-                : Padding(
-                    padding: const EdgeInsets.only(top: AppSpace.lg),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(child: Text('$queued of $target queued', style: AppText.footnote)),
-                            Text('${(fraction * 100).round()}%', style: AppText.readout),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpace.md),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(3),
-                          child: TweenAnimationBuilder<double>(
-                            tween: Tween(end: fraction),
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeOutCubic,
-                            builder: (_, value, _) => LinearProgressIndicator(
-                              value: value,
-                              minHeight: 5,
-                              backgroundColor: AppColors.surface,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
+          if (target > 1) ...[
+            const SizedBox(height: AppSpace.xs),
+            Text('${controller.batch.length} of $target queued', style: AppText.footnote),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _RoundStep extends StatelessWidget {
+  const _RoundStep({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: label,
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        pressedScale: 0.88,
+        child: SizedBox(
+          width: kMinTouchTarget,
+          height: kMinTouchTarget,
+          child: Center(
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+              child: Icon(icon, size: 15, color: onTap == null ? AppColors.textFaint : AppColors.textPrimary),
+            ),
+          ),
+        ),
       ),
     );
   }

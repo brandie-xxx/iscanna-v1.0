@@ -10,6 +10,7 @@
 ## Typefaces (iscanna)
 - Inter: interface text (headings, labels, body).
 - Sofia Sans: buttons and controls (buttons, tab bar, segmented controls, keypad, sheet actions).
+  Exception: the CSV / JSON / TXT export choice uses Inter.
 - Chivo: codes, PINs and other figures.
 
 ## Credit

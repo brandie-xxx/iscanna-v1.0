@@ -447,46 +447,6 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
   }
 }
 
-/// HIG stepper: [ − | + ].
-class StepperControl extends StatelessWidget {
-  const StepperControl({super.key, required this.onDecrement, required this.onIncrement, required this.semanticValue});
-
-  final VoidCallback? onDecrement;
-  final VoidCallback? onIncrement;
-  final String semanticValue;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget half(IconData icon, VoidCallback? onTap, String label) => Semantics(
-      button: true,
-      enabled: onTap != null,
-      label: '$label, $semanticValue',
-      excludeSemantics: true,
-      child: Pressable(
-        onTap: onTap,
-        pressedScale: 0.9,
-        child: SizedBox(
-          width: 46,
-          height: 34,
-          child: Icon(icon, size: 16, color: onTap == null ? AppColors.textFaint : AppColors.textPrimary),
-        ),
-      ),
-    );
-
-    return Container(
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(9)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          half(LucideIcons.minus, onDecrement, 'Decrease'),
-          const SizedBox(width: 0.5, height: 18, child: ColoredBox(color: AppColors.borderStrong)),
-          half(LucideIcons.plus, onIncrement, 'Increase'),
-        ],
-      ),
-    );
-  }
-}
-
 /// Footer credit linking to the author's X profile.
 class AuthorFooter extends StatelessWidget {
   const AuthorFooter({super.key});

@@ -65,7 +65,7 @@ abstract final class AppText {
   /// Screen title (centred, collapses into the navigation bar).
   static const largeTitle = TextStyle(
     fontFamily: kFontFamily,
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.6,
     color: AppColors.textPrimary,

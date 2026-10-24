@@ -80,7 +80,7 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                       opacity: Curves.easeIn.transform(t),
                       child: Semantics(
                         header: t > 0.5,
-                        child: Text(title, style: AppText.headline),
+                        child: Text(title, style: AppText.headline.copyWith(fontSize: 14)),
                       ),
                     ),
                     if (leading != null)

@@ -45,6 +45,9 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
+/// A keypad key in the PIN editor (round keys are labelled with their digit).
+Finder _key(String digit) => find.bySemanticsLabel(RegExp('^$digit\$'));
+
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await _scrollTo(tester, finder);
   await tester.ensureVisible(finder);
@@ -76,7 +79,7 @@ void main() {
     // Editor opens on the first unread digit; Cancel discards edits.
     await _tapVisible(tester, find.text('Edit'));
     expect(find.text('Digit 11 of 16'), findsOneWidget);
-    await tester.tap(find.descendant(of: find.byType(GridView), matching: find.text('9')));
+    await tester.tap(_key('9'));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(app.card?.rawPin, '4022622405000000');
@@ -84,7 +87,7 @@ void main() {
     // Fill in the six missing digits and save.
     await _tapVisible(tester, find.text('Edit'));
     for (final d in '821561'.split('')) {
-      await tester.tap(find.descendant(of: find.byType(GridView), matching: find.text(d)));
+      await tester.tap(_key(d));
     }
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
@@ -99,7 +102,12 @@ void main() {
     expect(find.textContaining('2 or more'), findsWidgets);
 
     // Turn Batch on, queue the card, then open the Batch tab from the tab bar.
-    await _tapVisible(tester, find.bySemanticsLabel(RegExp('^Increase')));
+    // The batch target sits above the scanner, so scroll back up to it.
+    final page = find.descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable)).first;
+    await tester.scrollUntilVisible(find.bySemanticsLabel(RegExp('^Increase')), -200, scrollable: page);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel(RegExp('^Increase')));
+    await tester.pumpAndSettle();
     expect(app.batchEnabled, isTrue);
     await _tapVisible(tester, find.text('Add to Batch'));
     await tester.tap(find.text('Batch'));
@@ -107,7 +115,10 @@ void main() {
     expect(find.text('*133*4022622405821561#'), findsOneWidget);
     expect(find.text('Export CSV'), findsOneWidget);
 
-    // Row tap opens the action sheet; remove the card.
+    // Cards are dialed one at a time from each row: there is no dial-all control.
+    expect(find.textContaining(RegExp('dial all', caseSensitive: false)), findsNothing);
+
+    // Row tap opens the action sheet (with Dial for just this card); remove the card.
     await tester.tap(find.text('*133*4022622405821561#'));
     await tester.pumpAndSettle();
     expect(find.text('Edit PIN'), findsOneWidget);

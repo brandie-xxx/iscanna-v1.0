@@ -146,20 +146,28 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
               },
             ),
             const SizedBox(height: AppSpace.xl),
-            GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: AppSpace.sm,
-              crossAxisSpacing: AppSpace.sm,
-              childAspectRatio: 2.3,
-              children: [
-                for (final n in ['1', '2', '3', '4', '5', '6', '7', '8', '9']) _Key(label: n, onTap: () => _press(n)),
+            // Phone-style keypad: round number keys, plain icons for clear and backspace.
+            for (final row in [
+              [
+                for (final n in ['1', '2', '3']) _Key(label: n, onTap: () => _press(n)),
+              ],
+              [
+                for (final n in ['4', '5', '6']) _Key(label: n, onTap: () => _press(n)),
+              ],
+              [
+                for (final n in ['7', '8', '9']) _Key(label: n, onTap: () => _press(n)),
+              ],
+              [
                 _Key(icon: LucideIcons.eraser, semanticLabel: 'Clear digit', muted: true, onTap: _clear),
                 _Key(label: '0', onTap: () => _press('0')),
                 _Key(icon: LucideIcons.delete, semanticLabel: 'Backspace', muted: true, onTap: _backspace),
               ],
-            ),
+            ]) ...[
+              Row(
+                children: [for (final key in row) Expanded(child: Center(child: key))],
+              ),
+              const SizedBox(height: AppSpace.md),
+            ],
           ],
         ),
       ),
@@ -169,7 +177,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
   Widget _group(int block, Set<int> lowConfidence) {
     return Container(
       padding: const EdgeInsets.all(AppSpace.xs),
-      decoration: BoxDecoration(color: AppColors.inset, borderRadius: BorderRadius.circular(AppRadius.chip + 2)),
+      color: AppColors.inset,
       child: Row(
         children: [
           for (var sub = 0; sub < 4; sub++) ...[
@@ -199,14 +207,8 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
           curve: Curves.easeOut,
           height: 46,
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.accent : AppColors.surface,
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: selected ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.4), blurRadius: 10)] : null,
-            border: Border(
-              bottom: BorderSide(color: flagged && !selected ? AppColors.warning : Colors.transparent, width: 2),
-            ),
-          ),
+          // Sharp, square-cornered digit boxes.
+          decoration: BoxDecoration(color: selected ? AppColors.accent : AppColors.surface),
           child: Text(
             _digits[i],
             style: TextStyle(
@@ -257,10 +259,16 @@ class _KeyState extends State<_Key> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 90),
+          width: 64,
+          height: 64,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _down ? AppColors.surfaceHover : (widget.muted ? Colors.transparent : AppColors.surface),
-            borderRadius: BorderRadius.circular(AppRadius.control - 2),
+            shape: BoxShape.circle,
+            color: _down
+                ? AppColors.surfaceHover
+                : widget.muted
+                ? Colors.transparent
+                : AppColors.surface,
           ),
           child: widget.icon != null
               ? Icon(widget.icon, size: 22, color: fg)

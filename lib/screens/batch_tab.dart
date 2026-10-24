@@ -195,7 +195,7 @@ class _BatchTabState extends State<BatchTab> {
                     'Clear',
                     style: TextStyle(
                       fontFamily: kButtonFamily,
-                      fontSize: 15.5,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: AppColors.danger,
                     ),
@@ -339,7 +339,7 @@ class _BatchRow extends StatelessWidget {
       ),
       child: Semantics(
         button: true,
-        label: '${card.carrierName} card ${index + 1}, ${card.canDial ? 'verified' : 'needs review'}. Opens actions',
+        label: '${card.carrierName} card ${index + 1}${card.canDial ? '' : ', needs review'}. Opens actions',
         child: Pressable(
           onTap: onTap,
           pressedScale: 0.99,
@@ -401,13 +401,13 @@ class _BatchRow extends StatelessWidget {
                           TextSpan(
                             children: [
                               TextSpan(text: card.carrierName),
-                              const TextSpan(text: '  ·  '),
-                              card.canDial
-                                  ? const TextSpan(text: 'Verified')
-                                  : const TextSpan(
-                                      text: 'Needs review',
-                                      style: TextStyle(color: AppColors.warning),
-                                    ),
+                              if (!card.canDial) ...[
+                                const TextSpan(text: '  ·  '),
+                                const TextSpan(
+                                  text: 'Needs review',
+                                  style: TextStyle(color: AppColors.warning),
+                                ),
+                              ],
                             ],
                           ),
                           maxLines: 1,
@@ -485,9 +485,9 @@ class _FormatRow extends StatelessWidget {
                     child: AnimatedDefaultTextStyle(
                       duration: const Duration(milliseconds: 150),
                       style: TextStyle(
-                        fontFamily: kButtonFamily,
-                        fontSize: 14,
-                        fontWeight: formats[i] == value ? FontWeight.w800 : FontWeight.w600,
+                        fontFamily: kFontFamily,
+                        fontSize: 13.5,
+                        fontWeight: formats[i] == value ? FontWeight.w700 : FontWeight.w500,
                         color: formats[i] == value ? AppColors.accent : AppColors.textMuted,
                       ),
                       child: Text(formats[i].extension.toUpperCase()),
