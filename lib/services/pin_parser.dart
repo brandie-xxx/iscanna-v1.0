@@ -14,7 +14,7 @@ ScannedCard parsePinText(
   String text, {
   required CarrierFormat fallbackFormat,
   int? confidence,
-  CardSource? source,
+  String? photoPath,
   DateTime? now,
   Random? random,
 }) {
@@ -69,7 +69,7 @@ ScannedCard parsePinText(
     status: status,
     errorMessage: error,
     timestamp: at,
-    source: source,
+    photoPath: photoPath,
   );
 }
 

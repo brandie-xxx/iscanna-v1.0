@@ -1,100 +1,270 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iscanna/data/carriers.dart';
 import 'package:iscanna/main.dart';
 import 'package:iscanna/services/ocr_service.dart';
 import 'package:iscanna/state/app_controller.dart';
+import 'package:iscanna/theme/app_theme.dart';
+import 'package:iscanna/widgets/common.dart';
 
-class _NoOcr implements OcrService {
-  _NoOcr([this.text = '']);
-  final String text;
+/// Returns canned OCR text per photo path.
+class _FakeOcr implements OcrService {
+  static const texts = {
+    '/econet.jpg': '3630 1466 8211 3274',
+    '/netone.jpg': '4022 6224 0582 1561',
+    '/partial.jpg': '4022 6224 05',
+  };
 
   @override
-  Future<OcrResult> readImage(String path) async => OcrResult(text, null);
+  Future<OcrResult> readImage(String path) async => OcrResult(texts[path] ?? '', null);
 
   @override
   Future<void> dispose() async {}
 }
 
+Future<AppController> _pumpApp(WidgetTester tester, {Size size = const Size(390, 844), double text = 1}) async {
+  tester.view.physicalSize = size * 3;
+  tester.view.devicePixelRatio = 3;
+  tester.platformDispatcher.textScaleFactorTestValue = text;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  final app = AppController(_FakeOcr());
+  await tester.pumpWidget(IscannaApp(controller: app));
+  await tester.pumpAndSettle();
+  return app;
+}
+
+Future<void> _scan(WidgetTester tester, AppController app, String path) async {
+  unawaited(app.scanPhoto(path));
+  await tester.pumpAndSettle();
+}
+
+/// Scrolls the current tab until [finder] is built and on screen (lists build lazily).
+Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
+  final page = find.descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable)).first;
+  await tester.scrollUntilVisible(finder, 200, scrollable: page);
+  await tester.pumpAndSettle();
+}
+
+/// A keypad key in the PIN editor (round keys are labelled with their digit).
+Finder _key(String digit) => find.bySemanticsLabel(RegExp('^$digit\$'));
+
+Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
+  await _scrollTo(tester, finder);
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
 void main() {
-  testWidgets('sample scan, edit cancel, batch flow', (tester) async {
-    tester.view.physicalSize = const Size(1170, 2532);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+  testWidgets('scan, review, edit and queue a card', (tester) async {
+    final app = await _pumpApp(tester);
 
-    final app = AppController(_NoOcr('4022 6224 05'), sampleDelay: Duration.zero);
-    await tester.pumpWidget(IscannaApp(controller: app));
-    expect(find.text('Awaiting Voucher Card'), findsOneWidget);
+    // Header brand only; no sample presets, no footer wordmark; author link present.
+    expect(find.text('iscanna1.0'), findsOneWidget);
+    expect(find.textContaining('sample', findRichText: true), findsNothing);
+    await _scrollTo(tester, find.text('No Card Yet'));
+    await _scrollTo(tester, find.text('*exxstatix'));
+    expect(find.text('*exxstatix'), findsOneWidget);
 
-    // One tap on a preset = one scan.
-    await tester.tap(find.text('Econet card'));
-    await tester.pumpAndSettle();
+    await _scan(tester, app, '/econet.jpg');
+    await _scrollTo(tester, find.text('Verified'));
     expect(find.text('*121*3630146682113274#'), findsOneWidget);
-    expect(find.text('Verified'), findsOneWidget);
 
-    // A partial camera read needs review and can't be dialed.
-    unawaited(app.scanPhoto('/partial.jpg'));
-    await tester.pumpAndSettle();
-    expect(find.text('Review Needed'), findsOneWidget);
-    expect(find.text('Fix PIN to Dial'), findsOneWidget);
+    // A partial read needs review and can't be dialed.
+    await _scan(tester, app, '/partial.jpg');
+    await _scrollTo(tester, find.text('Dial'));
+    expect(find.text('Review'), findsOneWidget);
 
     // Editor opens on the first unread digit; Cancel discards edits.
-    await tester.ensureVisible(find.text('Edit'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
-    expect(find.text('Digit 11 of 16'), findsOneWidget);
-    await tester.tap(find.descendant(of: find.byType(GridView), matching: find.text('9')));
+    await _tapVisible(tester, find.text('Edit'));
+    expect(find.text('Digit 11/16'), findsOneWidget);
+    await tester.tap(_key('9'));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(app.card?.rawPin, '4022622405000000');
 
-    // Fill in the six missing digits: 821561.
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    // Fill in the six missing digits and save.
+    await _tapVisible(tester, find.text('Edit'));
     for (final d in '821561'.split('')) {
-      await tester.tap(find.descendant(of: find.byType(GridView), matching: find.text(d)));
+      await tester.tap(_key(d));
     }
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(find.text('Verified'), findsOneWidget);
-    expect(find.text('Dial NetOne Code'), findsOneWidget);
+    expect(find.text('Dial'), findsOneWidget);
 
-    // Queue it and view the batch tab.
-    await tester.ensureVisible(find.text('Add to Batch'));
+    // Batch is off at a target of 1: Add to Batch is greyed out and explains itself, and the tab stays put.
+    await _tapVisible(tester, find.text('Add to Batch'));
+    expect(app.batch, isEmpty);
+    expect(find.textContaining('2 or more'), findsWidgets);
+    await tester.pumpAndSettle(const Duration(seconds: 4));
+    await tester.tap(find.text('Batch'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add to Batch'));
-    await tester.pump();
-    await tester.scrollUntilVisible(find.text('Batch'), -300);
+    expect(app.tab, AppTab.scanner);
+    expect(find.textContaining('2 or more'), findsWidgets);
+
+    // Turn Batch on, queue the card, then open the Batch tab from the tab bar.
+    // The batch target sits above the scanner, so scroll back up to it.
+    final page = find.descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable)).first;
+    await tester.scrollUntilVisible(find.bySemanticsLabel(RegExp('^Increase')), -200, scrollable: page);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel(RegExp('^Increase')));
+    await tester.pumpAndSettle();
+    expect(app.batchEnabled, isTrue);
+    await _tapVisible(tester, find.text('Add to Batch'));
     await tester.tap(find.text('Batch'));
     await tester.pumpAndSettle();
     expect(find.text('*133*4022622405821561#'), findsOneWidget);
-    expect(find.text('Export CSV'), findsOneWidget);
+    expect(find.text('Export'), findsNWidgets(2)); // section header and button
 
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    // Cards are dialed one at a time from each row: there is no dial-all control.
+    expect(find.textContaining(RegExp('dial all', caseSensitive: false)), findsNothing);
+
+    // Row tap opens the action sheet (with Dial for just this card); remove the card.
+    await tester.tap(find.text('*133*4022622405821561#'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit PIN'), findsOneWidget);
+    await tester.tap(find.text('Remove from Batch'));
+    await tester.pumpAndSettle();
+    expect(find.text('No Cards Yet'), findsOneWidget);
+
+    await tester.pumpAndSettle(const Duration(seconds: 4));
+  });
+
+  testWidgets('clearing the batch asks for confirmation', (tester) async {
+    final app = await _pumpApp(tester);
+    app.incrementTarget();
+    for (final path in ['/econet.jpg', '/netone.jpg']) {
+      await _scan(tester, app, path);
+      app.addToBatch(app.card!);
+    }
+    app.selectTab(AppTab.batch);
+    await tester.pumpAndSettle();
+    expect(find.text('2 cards'), findsOneWidget);
+
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clear Batch?'), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byType(CupertinoAlertDialog), matching: find.text('Clear')));
+    await tester.pumpAndSettle();
+    expect(app.batch, isEmpty);
+    expect(find.text('No Cards Yet'), findsOneWidget);
   });
 
   testWidgets('no overflow on a small phone with large text', (tester) async {
-    tester.view.physicalSize = const Size(720, 1480);
-    tester.view.devicePixelRatio = 2;
-    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
-    addTearDown(tester.view.reset);
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-
-    final app = AppController(_NoOcr('4022 6224 05'), sampleDelay: Duration.zero);
-    await tester.pumpWidget(IscannaApp(controller: app));
+    final app = await _pumpApp(tester, size: const Size(340, 720), text: 1.3);
     app.incrementTarget();
-    unawaited(app.scanPhoto('/partial.jpg'));
-    await tester.pumpAndSettle();
-    expect(find.text('Review Needed'), findsOneWidget);
+    await _scan(tester, app, '/partial.jpg');
+    await _scrollTo(tester, find.text('Review'));
+    expect(find.text('Dial'), findsOneWidget);
 
-    unawaited(app.scanSample(kSampleScenarios[1]));
-    await tester.pumpAndSettle();
+    await _scan(tester, app, '/econet.jpg');
     app.selectTab(AppTab.batch);
     await tester.pumpAndSettle();
     expect(find.text('*121*3630146682113274#'), findsOneWidget);
     // Layout overflows would have been reported as test failures above.
+  });
+
+  testWidgets('About sheet opens from the Scan header', (tester) async {
+    await _pumpApp(tester);
+    await tester.tap(find.bySemanticsLabel('About iscanna'));
+    await tester.pumpAndSettle();
+    expect(find.text('How it works'), findsOneWidget);
+    expect(find.text('Scan - Recharge'), findsOneWidget);
+    expect(find.text('Privacy'), findsNothing);
+    expect(find.textContaining('iPhone'), findsNothing);
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('How it works'), findsNothing);
+  });
+
+  testWidgets('empty Batch keeps the credit at the bottom of the page', (tester) async {
+    final app = await _pumpApp(tester);
+    app.incrementTarget();
+    app.selectTab(AppTab.batch);
+    await tester.pumpAndSettle();
+    expect(find.text('No Cards Yet'), findsOneWidget);
+    expect(find.text('Start Scanning…'), findsOneWidget);
+    final credit = tester.getRect(find.text('*exxstatix'));
+    expect(credit.bottom, greaterThan(844 * 0.75));
+  });
+
+  testWidgets('no forced uppercase text on any screen', (tester) async {
+    final app = await _pumpApp(tester);
+    app.incrementTarget();
+    await _scan(tester, app, '/partial.jpg');
+
+    void expectNoShouting() {
+      for (final widget in tester.widgetList<Text>(find.byType(Text))) {
+        final text = widget.data ?? widget.textSpan?.toPlainText() ?? '';
+        final letters = text.replaceAll(RegExp('[^A-Za-z]'), '');
+        // Acronyms (PIN, CSV, USSD…) are fine; whole words or phrases in capitals are not.
+        expect(letters.length >= 5 && letters == letters.toUpperCase(), isFalse, reason: 'Uppercase text: "$text"');
+      }
+    }
+
+    expectNoShouting();
+    app.selectTab(AppTab.batch);
+    await tester.pumpAndSettle();
+    expectNoShouting();
+    app.selectTab(AppTab.scanner);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('About iscanna'));
+    await tester.pumpAndSettle();
+    expectNoShouting();
+  });
+
+  testWidgets('follows the phone between light and dark without losing state', (tester) async {
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    final app = await _pumpApp(tester);
+    expect(AppColors.palette, AppPalette.light);
+    expect(Theme.of(tester.element(find.byType(Scaffold))).scaffoldBackgroundColor, AppPalette.light.background);
+
+    app.incrementTarget();
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    await tester.pumpAndSettle();
+    expect(AppColors.palette, AppPalette.dark);
+    expect(Theme.of(tester.element(find.byType(Scaffold))).scaffoldBackgroundColor, AppPalette.dark.background);
+    expect(find.text('2'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('Cards to scan')).style?.color, AppPalette.dark.textBody);
+  });
+
+  testWidgets('Add to Batch folds into a check once the card is queued', (tester) async {
+    final app = await _pumpApp(tester);
+    app.incrementTarget();
+    await _scan(tester, app, '/econet.jpg'); // verified scans are queued automatically
+    await _scrollTo(tester, find.bySemanticsLabel('Added to batch'));
+    expect(find.text('Add to Batch'), findsNothing);
+
+    // Removing the card unfolds it again, and tapping re-adds it with the fold.
+    app.removeFromBatch(app.batch.single.id);
+    await tester.pumpAndSettle();
+    expect(find.text('Add to Batch'), findsOneWidget);
+    expect(find.bySemanticsLabel('Added to batch'), findsNothing);
+    await tester.tap(find.text('Add to Batch'));
+    await tester.pumpAndSettle();
+    expect(app.batch, hasLength(1));
+    expect(find.bySemanticsLabel('Added to batch'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 4));
+  });
+
+  testWidgets('result shows carrier on the left and status on the right, without the dial pattern', (tester) async {
+    final app = await _pumpApp(tester);
+    await _scan(tester, app, '/econet.jpg');
+    await _scrollTo(tester, find.text('Verified'));
+    expect(find.text('*121*PIN#'), findsNothing);
+    final carrier = tester.getRect(find.text('Econet').last);
+    final status = tester.getRect(find.text('Verified'));
+    expect(status.left, greaterThan(carrier.right));
+    expect(carrier.center.dy, closeTo(status.center.dy, 2));
+    // The pill sits flush with the card's right edge, where the dial pattern used to be (Edit is right-aligned too).
+    final pill = find.ancestor(of: find.text('Verified'), matching: find.byType(StatusPill));
+    final edit = find.ancestor(of: find.text('Edit'), matching: find.byType(AppButton));
+    expect(tester.getRect(pill).right, closeTo(tester.getRect(edit).right, 0.5));
   });
 }

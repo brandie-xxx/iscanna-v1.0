@@ -7,13 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../models/models.dart';
 import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
-import 'sample_card_art.dart';
 
-/// "Camera & Scanner" panel: live viewfinder, capture, gallery upload, re-scan, target count.
+/// Scanner section: viewfinder (live camera, photo preview or empty state) and capture controls.
 class CameraCapture extends StatefulWidget {
   const CameraCapture({super.key, required this.controller});
 
@@ -113,7 +111,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
   Future<void> _capture() async {
     final camera = _camera;
     if (camera == null || camera.value.isTakingPicture) return;
-    await HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     try {
       if (_torchOn) await camera.setFlashMode(FlashMode.off);
       final shot = await camera.takePicture();
@@ -145,73 +143,100 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
   @override
   Widget build(BuildContext context) {
     final app = _app;
-    return Panel(
+    final live = _cameraActive;
+    return GroupedSection(
+      header: 'Scanner',
+      headerTrailing: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: app.isScanning
+            ? Text('Reading…', key: const ValueKey('reading'), style: AppText.readout)
+            : live
+            ? Text('● LIVE', key: const ValueKey('live'), style: AppText.readout)
+            : const SizedBox.shrink(),
+      ),
+      padding: const EdgeInsets.all(AppSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PanelHeader(
-            title: 'Scanner',
-            leadingBadge: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: app.isScanning ? const _ScanningTag() : const SizedBox.shrink(),
-            ),
-            trailing: _TargetCounter(controller: app),
-          ),
-          if (app.targetScanCount > 1) ...[
-            _TargetProgress(current: app.batch.length, target: app.targetScanCount),
-            const SizedBox(height: AppSpace.md),
-          ],
-          _viewport(app),
+          _viewfinder(app),
           const SizedBox(height: AppSpace.lg),
-          _controls(app),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: KeyedSubtree(key: ValueKey(live), child: _controls(app)),
+          ),
         ],
       ),
     );
   }
 
-  Widget _viewport(AppController app) {
-    final preview = app.preview;
+  Widget _viewfinder(AppController app) {
+    final preview = app.previewPath;
+    final live = _cameraActive;
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.control),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(AppRadius.control),
-        ),
+      child: ColoredBox(
+        color: AppColors.inset,
+        // Square viewfinder: tall enough to frame the whole card, with a full-width strip window.
         child: AspectRatio(
-          aspectRatio: 4 / 3,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                child: _cameraActive
-                    ? _LiveFeed(key: const ValueKey('live'), camera: _camera!)
-                    : preview != null
-                    ? _PreviewImage(key: ValueKey(preview), source: preview, processing: app.isScanning)
-                    : const _EmptyViewport(key: ValueKey('empty')),
-              ),
-              if (_cameraActive) const _FrameGuides(),
-              if (_cameraActive)
-                Positioned(
-                  top: AppSpace.md,
-                  right: AppSpace.md,
-                  child: _RoundIconButton(
-                    icon: _torchOn ? LucideIcons.zap : LucideIcons.zapOff,
-                    label: _torchOn ? 'Turn torch off' : 'Turn torch on',
-                    active: _torchOn,
-                    onTap: _toggleTorch,
+          aspectRatio: 1,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final strip = stripWindow(box.biggest);
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    child: live
+                        ? _LiveFeed(key: const ValueKey('live'), camera: _camera!)
+                        : preview != null
+                        ? _PhotoPreview(key: ValueKey(preview), path: preview)
+                        : const SizedBox.expand(key: ValueKey('empty')),
                   ),
-                ),
-              if (_cameraError != null)
-                Positioned(
-                  left: AppSpace.md,
-                  right: AppSpace.md,
-                  bottom: AppSpace.md,
-                  child: _ErrorStrip(message: _cameraError!),
-                ),
-            ],
+                  if (live || preview != null) _StripScrim(strip: strip),
+                  _StripFrame(strip: strip, bright: live || preview != null),
+                  if (live || app.isScanning) _ScanBeam(strip: strip),
+                  if (!live && preview == null) _EmptyViewfinder(strip: strip),
+                  Positioned(
+                    left: strip.left + 2,
+                    top: strip.top - 22,
+                    child: Text(
+                      live ? '● Live · PIN strip' : 'PIN strip',
+                      style: AppText.readout.copyWith(
+                        color: live || preview != null ? AppColors.accent : AppColors.textFaint,
+                      ),
+                    ),
+                  ),
+                  if (live)
+                    Positioned(
+                      top: AppSpace.md,
+                      right: AppSpace.md,
+                      child: IconCircleButton(
+                        icon: _torchOn ? LucideIcons.zap : LucideIcons.zapOff,
+                        label: _torchOn ? 'Turn torch off' : 'Turn torch on',
+                        active: _torchOn,
+                        size: 38,
+                        background: AppColors.background.withValues(alpha: 0.6),
+                        onPressed: _toggleTorch,
+                      ),
+                    ),
+                  if (live || app.isScanning)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: strip.bottom + AppSpace.md,
+                      child: Center(child: _HudChip(live ? 'Fit the whole strip in the frame' : 'Reading PIN…')),
+                    ),
+                  if (_cameraError != null)
+                    Positioned(
+                      left: AppSpace.md,
+                      right: AppSpace.md,
+                      bottom: AppSpace.md,
+                      child: _ErrorBanner(message: _cameraError!),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -220,253 +245,91 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
 
   Widget _controls(AppController app) {
     if (_cameraActive) {
-      return Row(
-        children: [
-          Expanded(
-            child: AppButton(
-              label: 'Capture Card',
-              icon: LucideIcons.scanLine,
-              variant: ButtonVariant.primary,
-              expand: true,
-              height: 48,
-              haptic: false,
-              onPressed: app.isScanning ? null : _capture,
+      // Camera-app layout: Cancel · shutter · (balance)
+      return SizedBox(
+        height: 84,
+        child: Row(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: AppButton(label: 'Cancel', kind: ButtonKind.plain, onPressed: _stopCamera),
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpace.md),
-          AppButton(label: 'Cancel', height: 48, onPressed: _stopCamera),
-        ],
+            _ShutterButton(onPressed: app.isScanning ? null : _capture),
+            const Expanded(child: SizedBox()),
+          ],
+        ),
       );
     }
+    final hasPhoto = app.previewPath != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (app.preview != null) ...[
-          AppButton(
-            label: app.isScanning ? 'Reading…' : 'Re-Scan',
-            icon: LucideIcons.refreshCw,
-            variant: ButtonVariant.primary,
-            expand: true,
-            height: 48,
-            onPressed: app.isScanning ? null : app.rescan,
-          ),
-          const SizedBox(height: AppSpace.md),
-        ],
         Row(
           children: [
             Expanded(
               child: AppButton(
-                label: _starting ? 'Opening…' : 'Camera',
-                icon: LucideIcons.camera,
-                variant: app.preview == null ? ButtonVariant.primary : ButtonVariant.secondary,
+                label: _starting ? 'Opening…' : 'Open Camera',
+                kind: ButtonKind.filled,
                 expand: true,
-                semanticLabel: 'Open camera',
                 onPressed: _starting ? null : _startCamera,
               ),
             ),
             const SizedBox(width: AppSpace.md),
             Expanded(
-              child: AppButton(
-                label: 'Upload',
-                icon: LucideIcons.upload,
-                semanticLabel: 'Upload photo',
-                expand: true,
-                onPressed: _pickFromGallery,
-              ),
+              child: AppButton(label: 'Choose Photo', expand: true, onPressed: _pickFromGallery),
             ),
           ],
         ),
+        if (hasPhoto) ...[
+          const SizedBox(height: AppSpace.md),
+          AppButton(
+            label: 'Scan Again',
+            icon: LucideIcons.refreshCw,
+            kind: ButtonKind.tinted,
+            expand: true,
+            onPressed: app.isScanning ? null : app.rescan,
+          ),
+        ],
       ],
     );
   }
 }
 
-class _ScanningTag extends StatelessWidget {
-  const _ScanningTag();
+class _ShutterButton extends StatelessWidget {
+  const _ShutterButton({required this.onPressed});
+
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Spinner(size: 11),
-          SizedBox(width: 5),
-          Text(
-            'Scanning',
-            style: TextStyle(fontSize: 11, color: AppColors.accent, fontWeight: FontWeight.w500),
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: 'Capture card',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onPressed,
+        haptic: false,
+        pressedScale: 0.9,
+        child: Container(
+          width: 72,
+          height: 72,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.textPrimary, width: 3),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Spinner extends StatefulWidget {
-  const _Spinner({this.size = 14, this.color = AppColors.accent});
-
-  final double size;
-  final Color color;
-
-  @override
-  State<_Spinner> createState() => _SpinnerState();
-}
-
-class _SpinnerState extends State<_Spinner> with SingleTickerProviderStateMixin {
-  late final AnimationController _spin = AnimationController(vsync: this, duration: const Duration(seconds: 1))
-    ..repeat();
-
-  @override
-  void dispose() {
-    _spin.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _spin,
-      child: Icon(LucideIcons.refreshCw, size: widget.size, color: widget.color),
-    );
-  }
-}
-
-/// Radio-style target count: tap the count to reset to 1, tap + to increase.
-class _TargetCounter extends StatelessWidget {
-  const _TargetCounter({required this.controller});
-
-  final AppController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final count = controller.targetScanCount;
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Semantics(
-            button: true,
-            label: count > 1 ? 'Target $count cards. Tap to reset to 1' : 'Target 1 card',
-            excludeSemantics: true,
-            child: GestureDetector(
-              onTap: count > 1
-                  ? () {
-                      HapticFeedback.selectionClick();
-                      controller.resetTarget();
-                    }
-                  : null,
-              child: Container(
-                height: 32,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.chip),
-                  border: Border.all(color: AppColors.borderStrong),
-                ),
-                child: Row(
-                  children: [
-                    const RadioDot(selected: true, size: 12),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$count',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.accent,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.accent,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.45), blurRadius: 18)],
             ),
+            child: Icon(LucideIcons.scanLine, color: AppColors.onAccent, size: 24),
           ),
-          const SizedBox(width: 4),
-          Semantics(
-            button: true,
-            label: 'Increase target count',
-            excludeSemantics: true,
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                controller.incrementTarget();
-              },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.panel,
-                  borderRadius: BorderRadius.circular(AppRadius.chip),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: const Icon(LucideIcons.plus, size: 14, color: AppColors.accent),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TargetProgress extends StatelessWidget {
-  const _TargetProgress({required this.current, required this.target});
-
-  final int current;
-  final int target;
-
-  @override
-  Widget build(BuildContext context) {
-    final fraction = (current / target).clamp(0.0, 1.0);
-    return Inset(
-      padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Target: $current of $target cards',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${(fraction * 100).round()}%',
-                style: const TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 7),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(end: fraction),
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-              builder: (_, value, _) => LinearProgressIndicator(
-                value: value,
-                minHeight: 3,
-                backgroundColor: AppColors.surface,
-                color: AppColors.accent,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -490,37 +353,98 @@ class _LiveFeed extends StatelessWidget {
   }
 }
 
-class _FrameGuides extends StatelessWidget {
-  const _FrameGuides();
+class _PhotoPreview extends StatelessWidget {
+  const _PhotoPreview({super.key, required this.path});
+
+  final String path;
 
   @override
   Widget build(BuildContext context) {
-    const side = BorderSide(color: AppColors.accent, width: 2);
-    Widget corner(Border border) => Container(width: 18, height: 18, decoration: BoxDecoration(border: border));
-    return IgnorePointer(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Image.file(
+      File(path),
+      fit: BoxFit.cover,
+      semanticLabel: 'Voucher card photo',
+      errorBuilder: (_, _, _) => Center(child: Icon(LucideIcons.imageOff, color: AppColors.textFaint, size: 28)),
+    );
+  }
+}
+
+/// The window a card's PIN strip should sit in: nearly full width, about a third as tall.
+@visibleForTesting
+Rect stripWindow(Size box) {
+  final width = box.width - 2 * AppSpace.lg;
+  final height = (width / 3.4).clamp(76.0, box.height * 0.45);
+  return Rect.fromCenter(center: box.center(Offset.zero), width: width, height: height);
+}
+
+/// Dims everything outside the strip window.
+class _StripScrim extends StatelessWidget {
+  const _StripScrim({required this.strip});
+
+  final Rect strip;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(child: CustomPaint(painter: _ScrimPainter(strip)));
+  }
+}
+
+class _ScrimPainter extends CustomPainter {
+  _ScrimPainter(this.strip);
+
+  final Rect strip;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRRect(RRect.fromRectAndRadius(strip, const Radius.circular(10)));
+    canvas.drawPath(path, Paint()..color = AppColors.background.withValues(alpha: 0.55));
+  }
+
+  @override
+  bool shouldRepaint(_ScrimPainter old) => old.strip != strip;
+}
+
+/// Hairline outline plus accent corner brackets around the strip window.
+class _StripFrame extends StatelessWidget {
+  const _StripFrame({required this.strip, required this.bright});
+
+  final Rect strip;
+  final bool bright;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = bright ? AppColors.accent : AppColors.accent.withValues(alpha: 0.45);
+    final side = BorderSide(color: color, width: 2.5);
+    const r = Radius.circular(10);
+    const arm = 28.0;
+    Widget corner(Alignment at, Border border, BorderRadius radius) => Align(
+      alignment: at,
+      child: Container(
+        width: arm,
+        height: arm,
+        decoration: BoxDecoration(border: border, borderRadius: radius),
+      ),
+    );
+    return Positioned.fromRect(
+      rect: strip,
+      child: IgnorePointer(
+        child: Stack(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                corner(const Border(top: side, left: side)),
-                corner(const Border(top: side, right: side)),
-              ],
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
+                ),
+              ),
             ),
-            const Text(
-              'Fit the PIN strip inside the frame',
-              style: TextStyle(fontSize: 11, color: AppColors.accentSoft, shadows: [Shadow(blurRadius: 6)]),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                corner(const Border(bottom: side, left: side)),
-                corner(const Border(bottom: side, right: side)),
-              ],
-            ),
+            corner(Alignment.topLeft, Border(top: side, left: side), const BorderRadius.only(topLeft: r)),
+            corner(Alignment.topRight, Border(top: side, right: side), const BorderRadius.only(topRight: r)),
+            corner(Alignment.bottomLeft, Border(bottom: side, left: side), const BorderRadius.only(bottomLeft: r)),
+            corner(Alignment.bottomRight, Border(bottom: side, right: side), const BorderRadius.only(bottomRight: r)),
           ],
         ),
       ),
@@ -528,103 +452,157 @@ class _FrameGuides extends StatelessWidget {
   }
 }
 
-class _PreviewImage extends StatelessWidget {
-  const _PreviewImage({super.key, required this.source, required this.processing});
+/// Glowing beam sweeping along the strip while the camera is live or a photo is being read.
+class _ScanBeam extends StatefulWidget {
+  const _ScanBeam({required this.strip});
 
-  final CardSource source;
-  final bool processing;
+  final Rect strip;
+
+  @override
+  State<_ScanBeam> createState() => _ScanBeamState();
+}
+
+class _ScanBeamState extends State<_ScanBeam> with SingleTickerProviderStateMixin {
+  late final AnimationController _sweep = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))
+    ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _sweep.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final image = switch (source) {
-      PhotoSource(:final path) => Image.file(
-        File(path),
-        fit: BoxFit.contain,
-        semanticLabel: 'Voucher card photo',
-        errorBuilder: (_, _, _) => const Center(child: Icon(LucideIcons.imageOff, color: AppColors.textMuted)),
-      ),
-      SampleSource(:final scenario) => SampleCardArt(scenario: scenario),
-    };
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(10),
-          child: Center(child: image),
-        ),
-        // Only built while processing, so the spinner doesn't animate unseen.
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: !processing
-              ? const SizedBox.shrink()
-              : Container(
-                  color: AppColors.background.withValues(alpha: 0.8),
-                  alignment: Alignment.center,
+    final strip = widget.strip.deflate(6);
+    return Positioned.fromRect(
+      rect: strip,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _sweep,
+          builder: (context, _) {
+            final t = Curves.easeInOutSine.transform(_sweep.value);
+            return Stack(
+              children: [
+                Positioned(
+                  left: t * (strip.width - 2),
+                  top: 0,
+                  bottom: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(7)),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _Spinner(size: 13, color: AppColors.background),
-                        SizedBox(width: 6),
-                        Text(
-                          'Reading PIN...',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.background),
-                        ),
-                      ],
+                    width: 2,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.accent.withValues(alpha: 0),
+                          AppColors.accent,
+                          AppColors.accent.withValues(alpha: 0),
+                        ],
+                      ),
+                      boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.7), blurRadius: 12)],
                     ),
                   ),
                 ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _HudChip extends StatelessWidget {
+  const _HudChip(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.background.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(text, style: AppText.readout),
+    );
+  }
+}
+
+/// Empty state: prompt above the strip window, privacy note below it.
+class _EmptyViewfinder extends StatelessWidget {
+  const _EmptyViewfinder({required this.strip});
+
+  final Rect strip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Prompt fills the space above the "PIN STRIP" label.
+        Positioned(
+          left: AppSpace.lg,
+          right: AppSpace.lg,
+          top: AppSpace.md,
+          height: (strip.top - 34 - AppSpace.md).clamp(0.0, double.infinity),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.scanLine, size: 26, color: AppColors.accent),
+                  const SizedBox(height: AppSpace.sm),
+                  Text(
+                    'Scan a recharge card',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: kFontFamily,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned.fromRect(
+          rect: strip,
+          // Inset from the frame so the placeholder never touches the corners, even with large text.
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '0000  0000  0000  0000',
+                  style: AppText.code.copyWith(fontSize: 16, color: AppColors.textFaint.withValues(alpha: 0.6)),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: AppSpace.lg,
+          right: AppSpace.lg,
+          top: strip.bottom + AppSpace.lg,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('NetOne or Econet · read on this device', textAlign: TextAlign.center, style: AppText.footnote),
+          ),
         ),
       ],
     );
   }
 }
 
-class _EmptyViewport extends StatelessWidget {
-  const _EmptyViewport({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Scrolls instead of overflowing when large text doesn't fit the 4:3 viewport.
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpace.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Icon(LucideIcons.scanLine, size: 22, color: AppColors.accent),
-            ),
-            const SizedBox(height: AppSpace.lg),
-            const Text(
-              'Open the camera or upload a photo of a NetOne or Econet card',
-              textAlign: TextAlign.center,
-              style: AppText.body,
-            ),
-            const SizedBox(height: AppSpace.sm),
-            const Text(
-              'Photos are read on this device. Nothing is uploaded.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorStrip extends StatelessWidget {
-  const _ErrorStrip({required this.message});
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
 
   final String message;
 
@@ -633,54 +611,20 @@ class _ErrorStrip extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.md, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.inset,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          border: Border.all(color: AppColors.borderStrong),
+          color: AppColors.background.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(AppRadius.control - 4),
+          border: Border.all(color: AppColors.borderStrong, width: 0.5),
         ),
         child: Row(
           children: [
-            const Icon(LucideIcons.circleAlert, size: 14, color: AppColors.accent),
-            const SizedBox(width: 8),
+            Icon(LucideIcons.circleAlert, size: 16, color: AppColors.warning),
+            const SizedBox(width: AppSpace.sm),
             Expanded(
-              child: Text(message, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              child: Text(message, style: AppText.footnote.copyWith(color: AppColors.textSecondary)),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RoundIconButton extends StatelessWidget {
-  const _RoundIconButton({required this.icon, required this.label, required this.onTap, this.active = false});
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: Container(
-          width: kMinTouchTarget,
-          height: kMinTouchTarget,
-          decoration: BoxDecoration(
-            color: active ? AppColors.accent : AppColors.background.withValues(alpha: 0.7),
-            shape: BoxShape.circle,
-            border: Border.all(color: active ? AppColors.accent : AppColors.borderStrong),
-          ),
-          child: Icon(icon, size: 18, color: active ? AppColors.background : AppColors.textPrimary),
         ),
       ),
     );

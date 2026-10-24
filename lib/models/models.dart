@@ -33,21 +33,6 @@ class DigitConfidence {
   bool get isLowConfidence => confidence < 80;
 }
 
-/// Where a scan came from: a photo on disk, or a built-in sample card.
-sealed class CardSource {
-  const CardSource();
-}
-
-class PhotoSource extends CardSource {
-  const PhotoSource(this.path);
-  final String path;
-}
-
-class SampleSource extends CardSource {
-  const SampleSource(this.scenario);
-  final SampleScenario scenario;
-}
-
 class ScannedCard {
   const ScannedCard({
     required this.id,
@@ -60,7 +45,7 @@ class ScannedCard {
     required this.status,
     required this.timestamp,
     this.errorMessage,
-    this.source,
+    this.photoPath,
     this.manualEditsCount = 0,
   });
 
@@ -76,7 +61,9 @@ class ScannedCard {
   final CardStatus status;
   final String? errorMessage;
   final DateTime timestamp;
-  final CardSource? source;
+
+  /// The photo the PIN was read from.
+  final String? photoPath;
   final int manualEditsCount;
 
   bool get canDial => status == CardStatus.success;
@@ -106,30 +93,8 @@ class ScannedCard {
       status: status ?? this.status,
       errorMessage: errorMessage != null ? errorMessage() : this.errorMessage,
       timestamp: timestamp,
-      source: source,
+      photoPath: photoPath,
       manualEditsCount: manualEditsCount ?? this.manualEditsCount,
     );
   }
-}
-
-class SampleScenario {
-  const SampleScenario({
-    required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.expectedPin,
-    required this.carrierName,
-    required this.confidence,
-    required this.footnote,
-  });
-
-  final String id;
-  final String title;
-  final String subtitle;
-  final String expectedPin;
-  final String carrierName;
-  final int confidence;
-
-  /// Line printed at the bottom of the drawn sample card.
-  final String footnote;
 }

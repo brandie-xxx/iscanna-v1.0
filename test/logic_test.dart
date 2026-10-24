@@ -124,7 +124,7 @@ void main() {
     });
 
     test('file name', () {
-      expect(exportFileName(ExportFormat.csv, DateTime(2026, 10, 23)), 'iscanna1.0-batch-2026-10-23.csv');
+      expect(exportFileName(ExportFormat.csv, DateTime(2026, 10, 23)), 'iscanna-batch-2026-10-23.csv');
     });
   });
 
@@ -140,7 +140,9 @@ void main() {
 
     setUp(() {
       ocr = FakeOcr();
-      app = AppController(ocr, sampleDelay: Duration.zero);
+      app = AppController(ocr);
+      ocr.results['econet.jpg'] = const OcrResult('3630 1466 8211 3274', 96);
+      ocr.results['netone.jpg'] = const OcrResult('4022 6224 0582 1561', 99);
     });
 
     test('photo scan builds a card from OCR text', () async {
@@ -171,8 +173,8 @@ void main() {
 
     test('auto-queues only verified cards, deduped by PIN', () async {
       app.incrementTarget();
-      await app.scanSample(kSampleScenarios[1]);
-      await app.scanSample(kSampleScenarios[1]);
+      await app.scanPhoto('econet.jpg');
+      await app.scanPhoto('econet.jpg');
       ocr.results['partial.jpg'] = const OcrResult('4022 6224 05', 95); // incomplete: needs review
       await app.scanPhoto('partial.jpg');
       expect(app.batch.map((c) => c.rawPin), ['3630146682113274']);
@@ -180,8 +182,30 @@ void main() {
       expect(app.card?.digits[10].confidence, 0);
     });
 
+    test('Batch tab opens only at a target of 2 or more', () {
+      app.selectTab(AppTab.batch);
+      expect(app.tab, AppTab.scanner);
+      app.incrementTarget();
+      app.selectTab(AppTab.batch);
+      expect(app.tab, AppTab.batch);
+      app.decrementTarget();
+      expect(app.batchEnabled, isFalse);
+      expect(app.tab, AppTab.scanner);
+    });
+
+    test('target count stays between 1 and 99', () {
+      app.decrementTarget();
+      expect(app.targetScanCount, 1);
+      for (var i = 0; i < 120; i++) {
+        app.incrementTarget();
+      }
+      expect(app.targetScanCount, 99);
+      app.decrementTarget();
+      expect(app.targetScanCount, 98);
+    });
+
     test('corrections and carrier switches update the batch copy', () async {
-      await app.scanSample(kSampleScenarios[0]);
+      await app.scanPhoto('netone.jpg');
       app.addToBatch(app.card!);
       app.saveCorrection(app.card!, '4022622405821560');
       expect(app.batch.single.rawPin, '4022622405821560');
@@ -190,18 +214,20 @@ void main() {
       expect(app.card?.carrierName, 'Econet');
     });
 
-    test('samples are one clean card per carrier', () {
-      expect(kSampleScenarios.map((s) => s.carrierName), ['NetOne', 'Econet']);
-      for (final s in kSampleScenarios) {
-        expect(parsePinText(s.expectedPin, fallbackFormat: netOne, confidence: s.confidence).canDial, isTrue);
-      }
+    test('rescan reads the current photo again', () async {
+      await app.scanPhoto('econet.jpg');
+      final first = app.card!.id;
+      await app.rescan();
+      expect(app.previewPath, 'econet.jpg');
+      expect(app.card?.carrierName, 'Econet');
+      expect(app.card?.id, isNot(first));
     });
 
-    test('rescan replays the current source', () async {
-      await app.scanSample(kSampleScenarios[1]);
-      await app.rescan();
-      expect(app.card?.carrierName, 'Econet');
-      expect(app.activeSampleId, 'sample-econet');
+    test('opening the camera clears the preview but keeps the result', () async {
+      await app.scanPhoto('econet.jpg');
+      app.clearPreview();
+      expect(app.previewPath, isNull);
+      expect(app.card, isNotNull);
     });
   });
 }

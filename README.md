@@ -1,4 +1,4 @@
-# iscanna1.0
+# iscanna
 
 Mobile app (Flutter, Android + iOS) that scans NetOne / Econet recharge cards, reads the
 16-digit PIN **on-device** with Google ML Kit, wraps it in the carrier's USSD code
@@ -16,7 +16,7 @@ flutter pub get
 flutter run              # on a connected phone or emulator
 ```
 
-The camera needs a real device; on an emulator use **Select Card Photo** or the sample presets.
+The camera needs a real device; on an emulator use **Choose Photo**.
 
 ## Checks
 
@@ -26,25 +26,28 @@ flutter test
 dart format -l 120 lib test
 ```
 
-CI (`.github/workflows/flutter.yml`) runs these on every push and uploads a debug APK
-as the `iscanna-debug-apk` artifact. An unsigned iOS build can be started manually
-from the Actions tab (*Run workflow* → *Also build iOS*).
+CI (`.github/workflows/flutter.yml`) runs these checks on every push. APKs are only built
+on request: Actions tab → *Flutter* → *Run workflow*. That uploads `iscanna-apk-arm64`
+(almost all phones) and `iscanna-apk-older-phones` (32-bit devices); tick *Also build iOS*
+for an unsigned iOS build.
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `lib/data/carriers.dart` | Carrier dial formats, card prefixes, sample cards — **edit here to change codes** |
+| `lib/data/carriers.dart` | Carrier dial formats and card prefixes — **edit here to change codes** |
 | `lib/services/pin_parser.dart` | OCR text → card (never invents digits) |
 | `lib/services/ocr_service.dart` | ML Kit text recognition |
 | `lib/services/dialer.dart` | `tel:` launch, clipboard |
 | `lib/services/batch_export.dart` | CSV / JSON / TXT export |
 | `lib/state/app_controller.dart` | App state and actions |
-| `lib/widgets/`, `lib/screens/` | UI |
+| `lib/screens/` | App shell with tab bar, Scan tab, Batch tab, About sheet |
+| `lib/widgets/` | Scanner, result card, PIN editor, shared HIG components |
 | `lib/theme/app_theme.dart` | Colour tokens and theme |
 
 ## Notes
 
 - Photos never leave the phone; the app has no network permission requirements for scanning.
-- iOS does not allow apps to open USSD codes, so on iPhone **Dial** copies the code instead.
-- Font: Geist Pixel (SIL Open Font License, `assets/fonts/OFL.txt`).
+- iOS does not allow apps to open USSD codes, so on iOS **Dial** copies the code instead.
+- Fonts: Inter for interface text, Sofia Sans for buttons and controls, Chivo for codes
+  (SIL Open Font License: `assets/fonts/OFL-Inter.txt`, `OFL-SofiaSans.txt`, `OFL-Chivo.txt`).

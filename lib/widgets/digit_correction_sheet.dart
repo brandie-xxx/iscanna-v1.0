@@ -8,7 +8,7 @@ import '../state/app_controller.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
 
-/// Bottom sheet with the 4×4 digit grid and keypad. Cancel discards edits.
+/// iOS-style sheet: Cancel · Edit PIN · Save, the 16 digit cells, and a keypad. Cancel discards edits.
 class DigitCorrectionSheet extends StatefulWidget {
   const DigitCorrectionSheet({super.key, required this.card, required this.onSave});
 
@@ -20,7 +20,11 @@ class DigitCorrectionSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+      backgroundColor: AppColors.panel,
+      barrierColor: AppColors.scrim,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel + 4)),
+      ),
       builder: (_) => DigitCorrectionSheet(card: card, onSave: (pin) => controller.saveCorrection(card, pin)),
     );
   }
@@ -79,22 +83,46 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(AppSpace.xl, AppSpace.xs, AppSpace.xl, AppSpace.lg),
+        padding: const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.sm, AppSpace.lg, AppSpace.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Semantics(header: true, child: const Text('Edit PIN', style: AppText.title)),
-                const Spacer(),
-                Text(
-                  'Digit ${_selected + 1} of $kPinLength',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                ),
-              ],
+            Center(
+              child: Container(
+                width: 36,
+                height: 5,
+                decoration: BoxDecoration(color: AppColors.borderStrong, borderRadius: BorderRadius.circular(3)),
+              ),
             ),
-            const SizedBox(height: AppSpace.lg),
+            const SizedBox(height: AppSpace.sm),
+            SizedBox(
+              height: kMinTouchTarget,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: AppButton(
+                        label: 'Cancel',
+                        kind: ButtonKind.plain,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+                  Semantics(header: true, child: Text('Edit PIN', style: AppText.barTitle)),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: AppButton(label: 'Save', kind: ButtonKind.plain, haptic: false, onPressed: _save),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpace.md),
+            Center(child: Text('Digit ${_selected + 1}/$kPinLength', style: AppText.readout)),
+            const SizedBox(height: AppSpace.md),
             // One row of 4 groups when each digit has room; otherwise two rows of 2 groups.
             LayoutBuilder(
               builder: (context, constraints) {
@@ -117,48 +145,29 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
                 );
               },
             ),
-            const SizedBox(height: AppSpace.lg),
-            Inset(
-              padding: const EdgeInsets.all(AppSpace.sm),
-              child: GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: AppSpace.sm,
-                crossAxisSpacing: AppSpace.sm,
-                childAspectRatio: 2.4,
-                children: [
-                  for (final n in ['1', '2', '3', '4', '5', '6', '7', '8', '9']) _Key(label: n, onTap: () => _press(n)),
-                  _Key(label: 'C', semanticLabel: 'Clear digit', muted: true, onTap: _clear),
-                  _Key(label: '0', onTap: () => _press('0')),
-                  _Key(icon: LucideIcons.delete, semanticLabel: 'Backspace', accent: true, onTap: _backspace),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpace.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Cancel',
-                    expand: true,
-                    height: 48,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-                const SizedBox(width: AppSpace.md),
-                Expanded(
-                  child: AppButton(
-                    label: 'Save',
-                    variant: ButtonVariant.primary,
-                    expand: true,
-                    height: 48,
-                    haptic: false,
-                    onPressed: _save,
-                  ),
-                ),
+            const SizedBox(height: AppSpace.xl),
+            // Phone-style keypad: round number keys, plain icons for clear and backspace.
+            for (final row in [
+              [
+                for (final n in ['1', '2', '3']) _Key(label: n, onTap: () => _press(n)),
               ],
-            ),
+              [
+                for (final n in ['4', '5', '6']) _Key(label: n, onTap: () => _press(n)),
+              ],
+              [
+                for (final n in ['7', '8', '9']) _Key(label: n, onTap: () => _press(n)),
+              ],
+              [
+                _Key(icon: LucideIcons.eraser, semanticLabel: 'Clear digit', muted: true, onTap: _clear),
+                _Key(label: '0', onTap: () => _press('0')),
+                _Key(icon: LucideIcons.delete, semanticLabel: 'Backspace', muted: true, onTap: _backspace),
+              ],
+            ]) ...[
+              Row(
+                children: [for (final key in row) Expanded(child: Center(child: key))],
+              ),
+              const SizedBox(height: AppSpace.md),
+            ],
           ],
         ),
       ),
@@ -168,11 +177,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
   Widget _group(int block, Set<int> lowConfidence) {
     return Container(
       padding: const EdgeInsets.all(AppSpace.xs),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppRadius.chip + 1),
-        border: Border.all(color: AppColors.border),
-      ),
+      color: AppColors.inset,
       child: Row(
         children: [
           for (var sub = 0; sub < 4; sub++) ...[
@@ -198,22 +203,24 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
           setState(() => _selected = i);
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          height: 44,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          height: 46,
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.accent : AppColors.surface,
-            borderRadius: BorderRadius.circular(4),
-            border: Border(
-              bottom: BorderSide(color: flagged && !selected ? AppColors.accent : Colors.transparent, width: 2),
-            ),
-          ),
+          // Sharp, square-cornered digit boxes.
+          decoration: BoxDecoration(color: selected ? AppColors.accent : AppColors.surface),
           child: Text(
             _digits[i],
             style: TextStyle(
-              fontSize: 15,
+              fontFamily: kDisplayFamily,
               fontWeight: FontWeight.w700,
-              color: selected ? AppColors.background : AppColors.textPrimary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+              fontSize: 16,
+              color: selected
+                  ? AppColors.onAccent
+                  : flagged
+                  ? AppColors.warning
+                  : AppColors.textPrimary,
             ),
           ),
         ),
@@ -223,14 +230,13 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
 }
 
 class _Key extends StatefulWidget {
-  const _Key({this.label, this.icon, this.semanticLabel, required this.onTap, this.muted = false, this.accent = false});
+  const _Key({this.label, this.icon, this.semanticLabel, required this.onTap, this.muted = false});
 
   final String? label;
   final IconData? icon;
   final String? semanticLabel;
   final VoidCallback onTap;
   final bool muted;
-  final bool accent;
 
   @override
   State<_Key> createState() => _KeyState();
@@ -241,13 +247,7 @@ class _KeyState extends State<_Key> {
 
   @override
   Widget build(BuildContext context) {
-    final fg = _down
-        ? AppColors.background
-        : widget.accent
-        ? AppColors.accent
-        : widget.muted
-        ? AppColors.textSecondary
-        : AppColors.textPrimary;
+    final fg = widget.muted ? AppColors.textSecondary : AppColors.textPrimary;
     return Semantics(
       button: true,
       label: widget.semanticLabel ?? widget.label,
@@ -258,17 +258,23 @@ class _KeyState extends State<_Key> {
         onTapCancel: () => setState(() => _down = false),
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 80),
+          duration: const Duration(milliseconds: 90),
+          width: 64,
+          height: 64,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _down ? AppColors.accent : AppColors.surface,
-            borderRadius: BorderRadius.circular(7),
+            shape: BoxShape.circle,
+            color: _down
+                ? AppColors.surfaceHover
+                : widget.muted
+                ? Colors.transparent
+                : AppColors.surface,
           ),
           child: widget.icon != null
-              ? Icon(widget.icon, size: 18, color: fg)
+              ? Icon(widget.icon, size: 22, color: fg)
               : Text(
                   widget.label!,
-                  style: TextStyle(fontSize: widget.muted ? 13 : 17, fontWeight: FontWeight.w600, color: fg),
+                  style: TextStyle(fontFamily: kKeypadFamily, fontSize: 23, fontWeight: FontWeight.w800, color: fg),
                 ),
         ),
       ),
