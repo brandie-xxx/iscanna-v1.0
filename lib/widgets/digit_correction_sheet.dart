@@ -121,7 +121,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
               ),
             ),
             const SizedBox(height: AppSpace.md),
-            Center(child: Text('Digit ${_selected + 1} of $kPinLength', style: AppText.readout)),
+            Center(child: Text('Digit ${_selected + 1}/$kPinLength', style: AppText.readout)),
             const SizedBox(height: AppSpace.md),
             // One row of 4 groups when each digit has room; otherwise two rows of 2 groups.
             LayoutBuilder(

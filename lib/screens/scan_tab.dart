@@ -112,7 +112,7 @@ class _BatchTarget extends StatelessWidget {
           ),
           if (target > 1) ...[
             const SizedBox(height: AppSpace.xs),
-            Text('${controller.batch.length} of $target queued', style: AppText.footnote),
+            Text('${controller.batch.length}/$target queued', style: AppText.footnote),
           ],
         ],
       ),

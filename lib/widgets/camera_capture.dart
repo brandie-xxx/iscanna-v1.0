@@ -266,39 +266,32 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppButton(
-          label: _starting ? 'Opening Camera…' : 'Open Camera',
-          icon: LucideIcons.camera,
-          kind: ButtonKind.filled,
-          size: ButtonSize.large,
-          expand: true,
-          onPressed: _starting ? null : _startCamera,
-        ),
-        const SizedBox(height: AppSpace.md),
         Row(
           children: [
             Expanded(
               child: AppButton(
-                label: 'Choose Photo',
-                icon: LucideIcons.images,
+                label: _starting ? 'Opening…' : 'Open Camera',
+                kind: ButtonKind.filled,
                 expand: true,
-                onPressed: _pickFromGallery,
+                onPressed: _starting ? null : _startCamera,
               ),
             ),
-            if (hasPhoto) ...[
-              const SizedBox(width: AppSpace.md),
-              Expanded(
-                child: AppButton(
-                  label: 'Scan Again',
-                  icon: LucideIcons.refreshCw,
-                  kind: ButtonKind.tinted,
-                  expand: true,
-                  onPressed: app.isScanning ? null : app.rescan,
-                ),
-              ),
-            ],
+            const SizedBox(width: AppSpace.md),
+            Expanded(
+              child: AppButton(label: 'Choose Photo', expand: true, onPressed: _pickFromGallery),
+            ),
           ],
         ),
+        if (hasPhoto) ...[
+          const SizedBox(height: AppSpace.md),
+          AppButton(
+            label: 'Scan Again',
+            icon: LucideIcons.refreshCw,
+            kind: ButtonKind.tinted,
+            expand: true,
+            onPressed: app.isScanning ? null : app.rescan,
+          ),
+        ],
       ],
     );
   }

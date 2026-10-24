@@ -74,11 +74,11 @@ void main() {
     // A partial read needs review and can't be dialed.
     await _scan(tester, app, '/partial.jpg');
     await _scrollTo(tester, find.text('Fix PIN to Dial'));
-    expect(find.text('Needs review'), findsOneWidget);
+    expect(find.text('Review'), findsOneWidget);
 
     // Editor opens on the first unread digit; Cancel discards edits.
     await _tapVisible(tester, find.text('Edit'));
-    expect(find.text('Digit 11 of 16'), findsOneWidget);
+    expect(find.text('Digit 11/16'), findsOneWidget);
     await tester.tap(_key('9'));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -113,7 +113,7 @@ void main() {
     await tester.tap(find.text('Batch'));
     await tester.pumpAndSettle();
     expect(find.text('*133*4022622405821561#'), findsOneWidget);
-    expect(find.text('Export CSV'), findsOneWidget);
+    expect(find.text('Export'), findsNWidgets(2)); // section header and button
 
     // Cards are dialed one at a time from each row: there is no dial-all control.
     expect(find.textContaining(RegExp('dial all', caseSensitive: false)), findsNothing);
@@ -153,7 +153,7 @@ void main() {
     final app = await _pumpApp(tester, size: const Size(340, 720), text: 1.3);
     app.incrementTarget();
     await _scan(tester, app, '/partial.jpg');
-    await _scrollTo(tester, find.text('Needs review'));
+    await _scrollTo(tester, find.text('Review'));
     expect(find.text('Fix PIN to Dial'), findsOneWidget);
 
     await _scan(tester, app, '/econet.jpg');

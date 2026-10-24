@@ -318,7 +318,7 @@ class StatusPill extends StatelessWidget {
 
   static (String, Color) describe(CardStatus status) => switch (status) {
     CardStatus.success => ('Verified', AppColors.accent),
-    CardStatus.warning => ('Needs review', AppColors.warning),
+    CardStatus.warning => ('Review', AppColors.warning),
     CardStatus.error => ('Unreadable', AppColors.danger),
   };
 
@@ -456,9 +456,11 @@ class AuthorFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpace.xxxl, bottom: AppSpace.lg),
+      // Right inset xs + the link's own lg padding lines the text up with the page gutter.
+      padding: const EdgeInsets.only(top: AppSpace.xxxl, bottom: AppSpace.lg, right: AppSpace.xs),
       // heightFactor 1: hug the link vertically instead of filling the space it's given.
-      child: Center(
+      child: Align(
+        alignment: Alignment.centerRight,
         heightFactor: 1,
         child: Semantics(
           link: true,

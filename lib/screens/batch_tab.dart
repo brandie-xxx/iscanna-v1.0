@@ -258,7 +258,7 @@ class _BatchTabState extends State<BatchTab> {
                     Expanded(
                       child: Builder(
                         builder: (btnContext) => AppButton(
-                          label: _exporting ? 'Exporting…' : 'Export ${_format.extension.toUpperCase()}',
+                          label: _exporting ? 'Exporting…' : 'Export',
                           icon: LucideIcons.share,
                           kind: ButtonKind.filled,
                           expand: true,
@@ -404,7 +404,7 @@ class _BatchRow extends StatelessWidget {
                               if (!card.canDial) ...[
                                 const TextSpan(text: '  ·  '),
                                 const TextSpan(
-                                  text: 'Needs review',
+                                  text: 'Review',
                                   style: TextStyle(color: AppColors.warning),
                                 ),
                               ],
