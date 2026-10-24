@@ -35,12 +35,7 @@ class BrandMark extends StatelessWidget {
                 ),
               ],
             ),
-            style: TextStyle(
-              fontFamily: kDisplayFamily,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-            ),
+            style: TextStyle(fontFamily: kFontFamily, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.4),
           ),
         ],
       ),
@@ -75,7 +70,7 @@ class GroupedSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.xs, AppSpace.sm),
             child: Row(
               children: [
-                Expanded(child: Text(header!.toUpperCase(), style: AppText.sectionHeader)),
+                Expanded(child: Text(header!, style: AppText.sectionHeader)),
                 ?headerTrailing,
               ],
             ),
@@ -323,7 +318,7 @@ class StatusPill extends StatelessWidget {
 
   static (String, Color) describe(CardStatus status) => switch (status) {
     CardStatus.success => ('Verified', AppColors.accent),
-    CardStatus.warning => ('Needs Review', AppColors.warning),
+    CardStatus.warning => ('Needs review', AppColors.warning),
     CardStatus.error => ('Unreadable', AppColors.danger),
   };
 
@@ -423,9 +418,9 @@ class SegmentedPicker<T extends Object> extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontFamily: kFontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontFamily: kButtonFamily,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: key == value ? AppColors.textPrimary : AppColors.textSecondary,
                       ),
                     ),
@@ -519,15 +514,14 @@ class AuthorFooter extends StatelessWidget {
             },
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: AppSpace.lg, vertical: AppSpace.md),
+              // Deliberately quiet: a small, muted credit rather than a call to action.
               child: Text(
                 '*exxstatix',
                 style: TextStyle(
-                  fontFamily: kDisplayFamily,
-                  fontWeight: FontWeight.w700,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                  fontSize: 13,
-                  color: AppColors.accent,
-                  letterSpacing: 0.4,
+                  fontFamily: kFontFamily,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11.5,
+                  color: AppColors.textFaint,
                 ),
               ),
             ),

@@ -82,12 +82,12 @@ class _BatchTabState extends State<BatchTab> {
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(fontFamily: kFontFamily)),
+            child: const Text('Cancel', style: TextStyle(fontFamily: kButtonFamily)),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear', style: TextStyle(fontFamily: kFontFamily)),
+            child: const Text('Clear', style: TextStyle(fontFamily: kButtonFamily)),
           ),
         ],
       ),
@@ -115,7 +115,7 @@ class _BatchTabState extends State<BatchTab> {
   Future<void> _showActions(ScannedCard card) async {
     unawaited(HapticFeedback.selectionClick());
     if (!mounted) return;
-    const action = TextStyle(fontFamily: kFontFamily, fontSize: 18);
+    const action = TextStyle(fontFamily: kButtonFamily, fontSize: 18, fontWeight: FontWeight.w600);
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
@@ -169,7 +169,7 @@ class _BatchTabState extends State<BatchTab> {
           onPressed: () => Navigator.pop(ctx),
           child: const Text(
             'Cancel',
-            style: TextStyle(fontFamily: kFontFamily, fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(fontFamily: kButtonFamily, fontSize: 18, fontWeight: FontWeight.w700),
           ),
         ),
       ),
@@ -194,7 +194,7 @@ class _BatchTabState extends State<BatchTab> {
                   child: const Text(
                     'Clear',
                     style: TextStyle(
-                      fontFamily: kFontFamily,
+                      fontFamily: kButtonFamily,
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: AppColors.danger,
@@ -212,7 +212,7 @@ class _BatchTabState extends State<BatchTab> {
                 GroupedSection(
                   header: 'Queued',
                   headerTrailing: Text(
-                    '${cards.length} ${cards.length == 1 ? 'CARD' : 'CARDS'}',
+                    '${cards.length} ${cards.length == 1 ? 'card' : 'cards'}',
                     style: AppText.readout,
                   ),
                   footer: 'Tap a card for actions. Swipe left to remove.',
@@ -337,7 +337,12 @@ class _BatchRow extends StatelessWidget {
             SizedBox(width: 6),
             Text(
               'Delete',
-              style: TextStyle(fontFamily: kFontFamily, fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+              style: TextStyle(
+                fontFamily: kButtonFamily,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ],
         ),

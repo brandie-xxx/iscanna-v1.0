@@ -149,7 +149,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
       headerTrailing: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         child: app.isScanning
-            ? const Text('READING…', key: ValueKey('reading'), style: AppText.readout)
+            ? const Text('Reading…', key: ValueKey('reading'), style: AppText.readout)
             : live
             ? const Text('● LIVE', key: ValueKey('live'), style: AppText.readout)
             : const SizedBox.shrink(),
@@ -201,7 +201,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
                     left: strip.left + 2,
                     top: strip.top - 22,
                     child: Text(
-                      live ? '● LIVE · PIN STRIP' : 'PIN STRIP',
+                      live ? '● Live · PIN strip' : 'PIN strip',
                       style: AppText.readout.copyWith(
                         color: live || preview != null ? AppColors.accent : AppColors.textFaint,
                       ),
@@ -225,7 +225,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
                       left: 0,
                       right: 0,
                       top: strip.bottom + AppSpace.md,
-                      child: Center(child: _HudChip(live ? 'FIT THE WHOLE STRIP IN THE FRAME' : 'READING PIN…')),
+                      child: Center(child: _HudChip(live ? 'Fit the whole strip in the frame' : 'Reading PIN…')),
                     ),
                   if (_cameraError != null)
                     Positioned(
@@ -567,7 +567,7 @@ class _EmptyViewfinder extends StatelessWidget {
                     'Scan a recharge card',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontFamily: kDisplayFamily,
+                      fontFamily: kFontFamily,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,

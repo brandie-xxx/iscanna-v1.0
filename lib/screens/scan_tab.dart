@@ -41,7 +41,7 @@ class ScanTab extends StatelessWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.fromLTRB(AppSpace.lg, 0, AppSpace.lg, AppSpace.sm),
-                child: Text('CARRIER', style: AppText.sectionHeader),
+                child: Text('Carrier', style: AppText.sectionHeader),
               ),
               SegmentedPicker<String>(
                 value: controller.format.id,
@@ -85,7 +85,7 @@ class _BatchTargetSection extends StatelessWidget {
     final queued = controller.batch.length;
     final fraction = (queued / target).clamp(0.0, 1.0);
     return GroupedSection(
-      header: 'Batch Target',
+      header: 'Batch target',
       footer: target > 1
           ? 'Batch is on. Verified scans join the queue automatically until the target is reached.'
           : 'Set 2 or more cards to turn on Batch and queue verified scans automatically.',
@@ -97,7 +97,7 @@ class _BatchTargetSection extends StatelessWidget {
               Text(
                 '$target',
                 style: const TextStyle(
-                  fontFamily: kFontFamily,
+                  fontFamily: kButtonFamily,
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
                   color: AppColors.accent,

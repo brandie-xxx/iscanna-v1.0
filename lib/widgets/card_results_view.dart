@@ -106,7 +106,7 @@ class _CardResultsViewState extends State<CardResultsView> {
             _Notice(message: card.errorMessage!),
           ],
           const SizedBox(height: AppSpace.lg),
-          const Text('USSD CODE', style: AppText.sectionHeader),
+          const Text('USSD code', style: AppText.sectionHeader),
           const SizedBox(height: AppSpace.sm),
           Semantics(
             label: 'USSD code ${card.wrappedPin.split('').join(' ')}',
@@ -144,7 +144,7 @@ class _CardResultsViewState extends State<CardResultsView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('VOUCHER PIN', style: AppText.sectionHeader),
+                    const Text('Voucher PIN', style: AppText.sectionHeader),
                     const SizedBox(height: 6),
                     SizedBox(
                       width: double.infinity,

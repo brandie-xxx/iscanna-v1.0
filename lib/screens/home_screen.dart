@@ -223,7 +223,7 @@ class _TabItem extends StatelessWidget {
                         child: Text(
                           badge > 99 ? '99+' : '$badge',
                           style: const TextStyle(
-                            fontFamily: kFontFamily,
+                            fontFamily: kButtonFamily,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.background,
@@ -237,7 +237,7 @@ class _TabItem extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontFamily: kFontFamily,
+                  fontFamily: kButtonFamily,
                   fontSize: 11.5,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: color,

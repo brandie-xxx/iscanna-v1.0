@@ -65,7 +65,20 @@ flutter:
   uses-material-design: true
 
   fonts:
-    # Body and interface text.
+    # Interface text: headings, labels and body.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-400.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-500.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-600.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-700.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-800.ttf
+          weight: 800
+    # Buttons and controls.
     - family: SofiaSans
       fonts:
         - asset: assets/fonts/SofiaSans-400.ttf
@@ -78,7 +91,7 @@ flutter:
           weight: 700
         - asset: assets/fonts/SofiaSans-800.ttf
           weight: 800
-    # Headings, titles, codes and readouts.
+    # Codes, PINs and other figures.
     - family: Chivo
       fonts:
         - asset: assets/fonts/Chivo-500.ttf

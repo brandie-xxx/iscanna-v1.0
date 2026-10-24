@@ -121,9 +121,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
               ),
             ),
             const SizedBox(height: AppSpace.md),
-            Center(
-              child: Text('DIGIT ${(_selected + 1).toString().padLeft(2, '0')} / $kPinLength', style: AppText.readout),
-            ),
+            Center(child: Text('Digit ${_selected + 1} of $kPinLength', style: AppText.readout)),
             const SizedBox(height: AppSpace.md),
             // One row of 4 groups when each digit has room; otherwise two rows of 2 groups.
             LayoutBuilder(
@@ -268,7 +266,7 @@ class _KeyState extends State<_Key> {
               ? Icon(widget.icon, size: 22, color: fg)
               : Text(
                   widget.label!,
-                  style: TextStyle(fontFamily: kFontFamily, fontSize: 24, fontWeight: FontWeight.w500, color: fg),
+                  style: TextStyle(fontFamily: kButtonFamily, fontSize: 24, fontWeight: FontWeight.w600, color: fg),
                 ),
         ),
       ),

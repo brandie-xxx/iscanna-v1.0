@@ -49,5 +49,5 @@ from the Actions tab (*Run workflow* → *Also build iOS*).
 
 - Photos never leave the phone; the app has no network permission requirements for scanning.
 - iOS does not allow apps to open USSD codes, so on iPhone **Dial** copies the code instead.
-- Fonts: Sofia Sans for body text and Chivo for headings and codes (SIL Open Font License,
-  `assets/fonts/OFL-SofiaSans.txt`, `assets/fonts/OFL-Chivo.txt`).
+- Fonts: Inter for interface text, Sofia Sans for buttons and controls, Chivo for codes
+  (SIL Open Font License: `assets/fonts/OFL-Inter.txt`, `OFL-SofiaSans.txt`, `OFL-Chivo.txt`).

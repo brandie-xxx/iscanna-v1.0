@@ -71,11 +71,11 @@ void main() {
     // A partial read needs review and can't be dialed.
     await _scan(tester, app, '/partial.jpg');
     await _scrollTo(tester, find.text('Fix PIN to Dial'));
-    expect(find.text('Needs Review'), findsOneWidget);
+    expect(find.text('Needs review'), findsOneWidget);
 
     // Editor opens on the first unread digit; Cancel discards edits.
     await _tapVisible(tester, find.text('Edit'));
-    expect(find.text('DIGIT 11 / 16'), findsOneWidget);
+    expect(find.text('Digit 11 of 16'), findsOneWidget);
     await tester.tap(find.descendant(of: find.byType(GridView), matching: find.text('9')));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -127,7 +127,7 @@ void main() {
     }
     app.selectTab(AppTab.batch);
     await tester.pumpAndSettle();
-    expect(find.text('2 CARDS'), findsOneWidget);
+    expect(find.text('2 cards'), findsOneWidget);
 
     await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();
@@ -142,7 +142,7 @@ void main() {
     final app = await _pumpApp(tester, size: const Size(340, 720), text: 1.3);
     app.incrementTarget();
     await _scan(tester, app, '/partial.jpg');
-    await _scrollTo(tester, find.text('Needs Review'));
+    await _scrollTo(tester, find.text('Needs review'));
     expect(find.text('Fix PIN to Dial'), findsOneWidget);
 
     await _scan(tester, app, '/econet.jpg');
@@ -156,11 +156,11 @@ void main() {
     await _pumpApp(tester);
     await tester.tap(find.bySemanticsLabel('About iscanna'));
     await tester.pumpAndSettle();
-    expect(find.text('Recharge without the typing.'), findsOneWidget);
-    expect(find.text('Why iscanna'.toUpperCase()), findsOneWidget);
+    expect(find.text('How it works'), findsOneWidget);
+    expect(find.text('Scan a recharge card and dial it in one tap.'), findsOneWidget);
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
-    expect(find.text('Recharge without the typing.'), findsNothing);
+    expect(find.text('How it works'), findsNothing);
   });
 
   testWidgets('empty Batch keeps the credit at the bottom of the page', (tester) async {
@@ -171,5 +171,30 @@ void main() {
     expect(find.text('No Cards Yet'), findsOneWidget);
     final credit = tester.getRect(find.text('*exxstatix'));
     expect(credit.bottom, greaterThan(844 * 0.75));
+  });
+
+  testWidgets('no forced uppercase text on any screen', (tester) async {
+    final app = await _pumpApp(tester);
+    app.incrementTarget();
+    await _scan(tester, app, '/partial.jpg');
+
+    void expectNoShouting() {
+      for (final widget in tester.widgetList<Text>(find.byType(Text))) {
+        final text = widget.data ?? widget.textSpan?.toPlainText() ?? '';
+        final letters = text.replaceAll(RegExp('[^A-Za-z]'), '');
+        // Acronyms (PIN, CSV, USSD…) are fine; whole words or phrases in capitals are not.
+        expect(letters.length >= 5 && letters == letters.toUpperCase(), isFalse, reason: 'Uppercase text: "$text"');
+      }
+    }
+
+    expectNoShouting();
+    app.selectTab(AppTab.batch);
+    await tester.pumpAndSettle();
+    expectNoShouting();
+    app.selectTab(AppTab.scanner);
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('About iscanna'));
+    await tester.pumpAndSettle();
+    expectNoShouting();
   });
 }
