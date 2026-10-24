@@ -108,18 +108,30 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
     }
   }
 
+  /// How long the torch stays on after the shutter, so the frame is fully exposed with the light on.
+  static const torchHold = Duration(milliseconds: 400);
+
   Future<void> _capture() async {
     final camera = _camera;
     if (camera == null || camera.value.isTakingPicture) return;
     unawaited(HapticFeedback.heavyImpact());
     try {
-      if (_torchOn) await camera.setFlashMode(FlashMode.off);
+      // The torch stays on through the capture (switching it off first would shoot in the dark),
+      // and for a moment after, then the camera is released, which turns it off.
       final shot = await camera.takePicture();
+      if (_torchOn) await Future<void>.delayed(torchHold);
       await _stopCamera();
       unawaited(_app.scanPhoto(shot.path));
     } on CameraException {
       if (mounted) setState(() => _cameraError = "Couldn't capture the frame. Try again or upload a photo.");
     }
+  }
+
+  /// Scan Again: discard the current photo and open the camera for a new capture.
+  void _scanAgain() {
+    _app.discardPhoto();
+    setState(() => _cameraError = null);
+    unawaited(_startCamera());
   }
 
   Future<void> _pickFromGallery() async {
@@ -289,7 +301,7 @@ class _CameraCaptureState extends State<CameraCapture> with WidgetsBindingObserv
             icon: LucideIcons.refreshCw,
             kind: ButtonKind.tinted,
             expand: true,
-            onPressed: app.isScanning ? null : app.rescan,
+            onPressed: _starting ? null : _scanAgain,
           ),
         ],
       ],

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -79,6 +80,7 @@ class AppController extends ChangeNotifier {
     final seq = ++_scanSeq;
     _isScanning = true;
     _scanError = null;
+    if (_previewPath != path) _deletePhoto(_previewPath);
     _previewPath = path;
     notifyListeners();
 
@@ -100,10 +102,23 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  /// Reads the current preview photo again.
-  Future<void> rescan() async {
-    final path = _previewPath;
-    if (path != null) await scanPhoto(path);
+  /// Scan Again: throws the current photo away so a new capture can replace it.
+  /// The last result stays on screen until the new scan replaces it.
+  void discardPhoto() {
+    _scanSeq++; // ignore any read still in flight for the old photo
+    _isScanning = false;
+    _deletePhoto(_previewPath);
+    _previewPath = null;
+    notifyListeners();
+  }
+
+  // Captured and picked photos are temporary copies in the app's cache; delete them once
+  // they're replaced so they don't pile up. Anything outside the cache is left alone.
+  void _deletePhoto(String? path) {
+    if (path == null) return;
+    final isTemp = path.contains('/cache/') || path.contains('/tmp/') || path.contains('/Caches/');
+    if (!isTemp) return;
+    unawaited(File(path).delete().then((_) {}, onError: (_) {}));
   }
 
   void _showCard(ScannedCard card) {
@@ -157,6 +172,7 @@ class AppController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _deletePhoto(_previewPath);
     _ocr.dispose();
     super.dispose();
   }
