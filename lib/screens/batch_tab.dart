@@ -82,12 +82,18 @@ class _BatchTabState extends State<BatchTab> {
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(fontFamily: kButtonFamily)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontFamily: kButtonFamily, fontWeight: FontWeight.w800),
+            ),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear', style: TextStyle(fontFamily: kButtonFamily)),
+            child: const Text(
+              'Clear',
+              style: TextStyle(fontFamily: kButtonFamily, fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -115,7 +121,7 @@ class _BatchTabState extends State<BatchTab> {
   Future<void> _showActions(ScannedCard card) async {
     unawaited(HapticFeedback.selectionClick());
     if (!mounted) return;
-    const action = TextStyle(fontFamily: kButtonFamily, fontSize: 16.5, fontWeight: FontWeight.w600);
+    const action = TextStyle(fontFamily: kButtonFamily, fontSize: 16.5, fontWeight: FontWeight.w800);
     await showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
@@ -169,7 +175,7 @@ class _BatchTabState extends State<BatchTab> {
           onPressed: () => Navigator.pop(ctx),
           child: const Text(
             'Cancel',
-            style: TextStyle(fontFamily: kButtonFamily, fontSize: 16.5, fontWeight: FontWeight.w700),
+            style: TextStyle(fontFamily: kButtonFamily, fontSize: 16.5, fontWeight: FontWeight.w900),
           ),
         ),
       ),
@@ -196,7 +202,7 @@ class _BatchTabState extends State<BatchTab> {
                     style: TextStyle(
                       fontFamily: kButtonFamily,
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w900,
                       color: AppColors.danger,
                     ),
                   ),
@@ -330,7 +336,7 @@ class _BatchRow extends StatelessWidget {
               style: TextStyle(
                 fontFamily: kButtonFamily,
                 fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w900,
                 color: Colors.white,
               ),
             ),

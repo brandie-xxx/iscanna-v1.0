@@ -477,7 +477,7 @@ class _RadioOption extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: kButtonFamily,
                       fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w900,
                       color: selected ? AppColors.textPrimary : AppColors.textSecondary,
                     ),
                   ),

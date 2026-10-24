@@ -181,12 +181,15 @@ const String kKeypadFamily = 'InterTight';
 /// Typography: Inter for text, Sofia Sans for buttons, Chivo for figures.
 /// Casing is always standard (sentence/title case): never force uppercase.
 abstract final class AppText {
+  /// Screen title once collapsed into the top bar, and sheet titles.
+  static TextStyle get barTitle => largeTitle.copyWith(fontSize: 14);
+
   /// Screen title (centred, collapses into the navigation bar).
   static TextStyle get largeTitle => TextStyle(
     fontFamily: kFontFamily,
     // Same size as the header wordmark.
     fontSize: 15,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w900,
     letterSpacing: -0.6,
     color: AppColors.textPrimary,
   );
@@ -251,7 +254,7 @@ abstract final class AppText {
   static const button = TextStyle(
     fontFamily: kButtonFamily,
     fontSize: 15,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w900,
     letterSpacing: -0.1,
   );
 }
@@ -319,10 +322,20 @@ CupertinoThemeData buildCupertinoTheme() => CupertinoThemeData(
   textTheme: CupertinoTextThemeData(
     primaryColor: AppColors.accent,
     textStyle: AppText.body,
-    actionTextStyle: TextStyle(fontFamily: kButtonFamily, fontSize: 15.5, color: AppColors.accent),
+    actionTextStyle: TextStyle(
+      fontFamily: kButtonFamily,
+      fontSize: 15.5,
+      fontWeight: FontWeight.w800,
+      color: AppColors.accent,
+    ),
     navTitleTextStyle: AppText.headline,
     navLargeTitleTextStyle: AppText.largeTitle,
-    navActionTextStyle: TextStyle(fontFamily: kButtonFamily, fontSize: 15.5, color: AppColors.accent),
+    navActionTextStyle: TextStyle(
+      fontFamily: kButtonFamily,
+      fontSize: 15.5,
+      fontWeight: FontWeight.w800,
+      color: AppColors.accent,
+    ),
   ),
 );
 

@@ -78,6 +78,9 @@ flutter:
           weight: 700
         - asset: assets/fonts/Inter-800.ttf
           weight: 800
+        # Screen titles only (Latin subset).
+        - asset: assets/fonts/Inter-900.ttf
+          weight: 900
     # Buttons and controls.
     - family: SofiaSans
       fonts:
@@ -91,6 +94,8 @@ flutter:
           weight: 700
         - asset: assets/fonts/SofiaSans-800.ttf
           weight: 800
+        - asset: assets/fonts/SofiaSans-900.ttf
+          weight: 900
     # Codes, PINs and other figures.
     - family: Chivo
       fonts:

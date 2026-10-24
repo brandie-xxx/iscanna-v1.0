@@ -45,7 +45,8 @@ class ScanTab extends StatelessWidget {
               ),
               RadioPicker<String>(
                 value: controller.format.id,
-                options: {for (final f in kCarrierFormats) f.id: (f.name, f.prefix)},
+                // Carrier names in lowercase here, as the owner asked.
+                options: {for (final f in kCarrierFormats) f.id: (f.name.toLowerCase(), f.prefix)},
                 onChanged: (id) => controller.selectFormat(findFormatById(id)!),
               ),
               const SizedBox(height: AppSpace.xxl),

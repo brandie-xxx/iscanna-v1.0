@@ -82,7 +82,7 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                         opacity: Curves.easeIn.transform(t),
                         child: Semantics(
                           header: t > 0.5,
-                          child: Text(title, maxLines: 1, style: AppText.headline.copyWith(fontSize: 14)),
+                          child: Text(title, maxLines: 1, style: AppText.barTitle),
                         ),
                       ),
                     ),

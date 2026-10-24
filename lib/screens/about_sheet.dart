@@ -44,7 +44,7 @@ class AboutSheet extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Semantics(header: true, child: Text('About', style: AppText.headline.copyWith(fontSize: 14))),
+              Semantics(header: true, child: Text('About', style: AppText.barTitle)),
               Positioned(
                 right: AppSpace.sm,
                 top: 0,
@@ -82,15 +82,13 @@ class AboutSheet extends StatelessWidget {
                       title: 'Dial',
                       text: 'Tap Dial to run the full code: *133*PIN# for NetOne, *121*PIN# for Econet.',
                     ),
+                    Hairline(indent: 40),
+                    _Step(
+                      number: 4,
+                      title: 'Batch',
+                      text: 'Set Cards to scan to 2 or more. Verified scans are queued so you can dial, copy or export them.',
+                    ),
                   ],
-                ),
-              ),
-              const SizedBox(height: AppSpace.xxl),
-              GroupedSection(
-                header: 'Batch',
-                child: Text(
-                  'Set Cards to scan to 2 or more. Verified scans are queued so you can dial, copy or export them.',
-                  style: AppText.footnote,
                 ),
               ),
               const SizedBox(height: AppSpace.xxl),

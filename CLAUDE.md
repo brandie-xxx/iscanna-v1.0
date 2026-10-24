@@ -6,6 +6,8 @@
 - Never force uppercase (no `.toUpperCase()` on UI text, no all-caps literals, no
   `textTransform: uppercase`). Acronyms keep their normal form (PIN, USSD, CSV).
 - Only switch to all-caps or all-lowercase when the owner explicitly asks for it.
+- Owner-requested exception: the carrier radio labels on the Scan screen are lowercase
+  ("netone", "econet"); carrier names stay capitalised everywhere else.
 
 ## Typefaces (iscanna)
 - Inter: interface text (headings, labels, body).
@@ -13,6 +15,7 @@
   Exception: the CSV / JSON / TXT export choice uses Inter.
 - Chivo: codes, PINs and other figures.
 - Inter Tight (extra bold): the digits on the Edit PIN keypad.
+- Weights: buttons and screen titles use black (900); carrier radio labels 900.
 
 ## Naming
 - The app is called "iscanna". The "1.0" appears only in the header wordmark.

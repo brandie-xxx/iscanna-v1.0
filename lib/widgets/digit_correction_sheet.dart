@@ -110,7 +110,7 @@ class _DigitCorrectionSheetState extends State<DigitCorrectionSheet> {
                       ),
                     ),
                   ),
-                  Semantics(header: true, child: Text('Edit PIN', style: AppText.headline)),
+                  Semantics(header: true, child: Text('Edit PIN', style: AppText.barTitle)),
                   Expanded(
                     child: Align(
                       alignment: Alignment.centerRight,
