@@ -26,10 +26,10 @@ flutter test
 dart format -l 120 lib test
 ```
 
-CI (`.github/workflows/flutter.yml`) runs these on every push and uploads release APKs:
-`iscanna-apk-arm64` (almost all phones) and `iscanna-apk-older-phones` (32-bit devices).
-An unsigned iOS build can be started manually
-from the Actions tab (*Run workflow* → *Also build iOS*).
+CI (`.github/workflows/flutter.yml`) runs these checks on every push. APKs are only built
+on request: Actions tab → *Flutter* → *Run workflow*. That uploads `iscanna-apk-arm64`
+(almost all phones) and `iscanna-apk-older-phones` (32-bit devices); tick *Also build iOS*
+for an unsigned iOS build.
 
 ## Layout
 

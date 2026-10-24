@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      android:
+        description: Build Android APKs
+        type: boolean
+        default: true
       ios:
         description: Also build iOS (unsigned, macOS runner)
         type: boolean
@@ -18,7 +22,7 @@ env:
   FLUTTER_VERSION: 3.47.7
 
 jobs:
-  check-and-build-android:
+  checks-and-android:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -40,23 +44,28 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
+      # APKs are only built on request (Actions → Flutter → Run workflow), not on every push.
       # Release build, one APK per CPU type: far smaller than a universal debug APK.
       # Signed with the runner's debug key (fine for sideloading, not for the Play Store).
       - name: Build release APKs
+        if: github.event_name == 'workflow_dispatch' && inputs.android
         run: flutter build apk --release --split-per-abi
 
       - name: Report APK sizes
+        if: github.event_name == 'workflow_dispatch' && inputs.android
         run: ls -lh build/app/outputs/flutter-apk/*.apk
 
       # Almost every Android phone from the last ~8 years.
-      - uses: actions/upload-artifact@v4
+      - if: github.event_name == 'workflow_dispatch' && inputs.android
+        uses: actions/upload-artifact@v4
         with:
           name: iscanna-apk-arm64
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           retention-days: 30
 
       # Older 32-bit phones only.
-      - uses: actions/upload-artifact@v4
+      - if: github.event_name == 'workflow_dispatch' && inputs.android
+        uses: actions/upload-artifact@v4
         with:
           name: iscanna-apk-older-phones
           path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
